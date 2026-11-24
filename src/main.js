@@ -164,13 +164,14 @@ async function makeViewer() {
   let switchTimer;
   let inCloseup = false;
   let focusedZone;
-  let fruitLabelAnchor;
+  let focusedLabelAnchor;
   let previousZoom = camera.zoom;
+  let closeupViewHeight;
   controls.addEventListener('change', () => {
     const zoomedOut = camera.zoom < previousZoom;
     previousZoom = camera.zoom;
-    // Once the view is wider than a plant, leave the aisle and reframe the building.
-    if (inCloseup && !cameraFrame && zoomedOut && (camera.top-camera.bottom)/camera.zoom >= 2.5) {
+    // Reframe the whole building once zooming out from the zone view.
+    if (inCloseup && !cameraFrame && zoomedOut && (camera.top-camera.bottom)/camera.zoom >= closeupViewHeight*1.35) {
       goHome();
     }
   });
@@ -242,55 +243,43 @@ async function makeViewer() {
       if (obj.name.match(new RegExp('^Row_' + z + '\\d{2}_DripLine$'))) stageMap[z].push(obj);
     });
   }
-  const areas = {};
-  const zoneWidth = 3.26;
-  const zoneLength = 18.35;
-  const glowMaterials = [
-    {color:0x91f6a0, opacity:.17},
-    {color:0x5bf58a, opacity:.94},
-    {color:0x87ff9c, opacity:.34},
-  ].map(options => new THREE.MeshBasicMaterial({
-    ...options, transparent:true, depthWrite:false, toneMapped:false,
-  }));
-  const edgeWidth = .10;
-  const haloWidth = .14;
-  for (const [letter, rows] of Object.entries(rowsByZone)) {
-    const area = new THREE.Group();
-    area.rotation.x = -Math.PI / 2;
-    area.position.set((rows[0] + rows.at(-1)) / 2,.037,-10);
-    area.visible = letter === zone;
-    function strip(width,length,x,y,material) {
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width,length),material);
-      mesh.name = 'ZoneHighlight_' + letter;
-      mesh.position.set(x,y,0);
-      area.add(mesh);
+  const zoneCenters = Object.fromEntries(Object.entries(rowsByZone).map(([letter,rows]) => [
+    letter,new THREE.Vector3((rows[0]+rows.at(-1))/2,0,-10),
+  ]));
+  const plantMaterials = {A:[],B:[]};
+  model.traverse(mesh => {
+    const match = /^Row_([AB])\d{2}_(Foliage|YoungFoliage|Vine|Melon)$/.exec(mesh.name);
+    if (!mesh.isMesh || !match) return;
+    const [,letter,part] = match;
+    const original = mesh.material;
+    const highlighted = original.clone();
+    highlighted.emissive.setHex(part === 'Melon' ? 0xa4ed73 : 0x68cf54);
+    highlighted.emissiveIntensity = part === 'Melon' ? .32 : .21;
+    plantMaterials[letter].push({mesh,original,highlighted});
+  });
+  function highlightPlants(selected) {
+    for (const [letter,plants] of Object.entries(plantMaterials)) {
+      for (const {mesh,original,highlighted} of plants) {
+        mesh.material = letter === selected ? highlighted : original;
+      }
     }
-    const innerWidth = zoneWidth - 2*edgeWidth;
-    const innerLength = zoneLength - 2*edgeWidth;
-    strip(innerWidth,innerLength,0,0,glowMaterials[0]);
-    for (const side of [-1,1]) {
-      strip(edgeWidth,zoneLength,side*(zoneWidth-edgeWidth)/2,0,glowMaterials[1]);
-      strip(innerWidth,edgeWidth,0,side*(zoneLength-edgeWidth)/2,glowMaterials[1]);
-      strip(haloWidth,zoneLength+2*haloWidth,side*(zoneWidth+haloWidth)/2,0,glowMaterials[2]);
-      strip(zoneWidth,haloWidth,0,side*(zoneLength+haloWidth)/2,glowMaterials[2]);
-    }
-    model.add(area);
-    areas[letter] = area;
   }
-  const zoneLabels = Object.entries(areas).map(([letter,area]) => {
+  highlightPlants(zone);
+
+  const zoneLabels = Object.entries(zoneCenters).map(([letter,position]) => {
     const label = document.createElement('button');
     label.type = 'button';
     label.className = 'zone-label';
     label.textContent = 'Zone ' + letter;
     label.addEventListener('click', () => selectZone(letter));
     holder.append(label);
-    return {letter,label,position:area.position.clone().setY(2.9)};
+    return {letter,label,position:position.clone().setY(2.9)};
   });
   const labelPoint = new THREE.Vector3();
   function positionZoneLabels() {
     camera.updateMatrixWorld();
     for (const {letter,label,position} of zoneLabels) {
-      labelPoint.copy(inCloseup && fruitLabelAnchor ? fruitLabelAnchor : position).project(camera);
+      labelPoint.copy(inCloseup && focusedLabelAnchor ? focusedLabelAnchor : position).project(camera);
       label.hidden = Boolean(cameraFrame) || (inCloseup && letter !== focusedZone) ||
         Math.abs(labelPoint.x) > .92 || Math.abs(labelPoint.y) > .9 || Math.abs(labelPoint.z) > 1;
       label.disabled = watering;
@@ -320,8 +309,8 @@ async function makeViewer() {
     camera.updateMatrixWorld();
     raycaster.setFromCamera(pointer,camera);
     if (!raycaster.ray.intersectPlane(floor,hit) || hit.z < -19.2 || hit.z > -.8) return;
-    for (const [letter, area] of Object.entries(areas)) {
-      if (Math.abs(hit.x-area.position.x) <= 1.63) selectZone(letter);
+    for (const [letter, position] of Object.entries(zoneCenters)) {
+      if (Math.abs(hit.x-position.x) <= 1.63) selectZone(letter);
     }
   });
   const originals = new Map();
@@ -406,32 +395,17 @@ async function makeViewer() {
     if (roof.visible) get('roof').click();
     get('zone-card-title').textContent = 'Zona ' + selected;
     get('zone-card').hidden = false;
-    const innerRowX = selected === 'A' ? 3.25 : 4.75;
-    const aisleSide = selected === 'A' ? 1 : -1;
-    const plant = selected === 'A' ? 3 : 4;
-    const plantZ = -1.225 - .45 * plant;
-    const fruitMesh = model.getObjectByName(selected === 'A' ? 'Row_A04_Melon' : 'Row_B01_Melon');
-    const fruitBounds = new THREE.Box3();
-    const vertex = new THREE.Vector3();
-    if (fruitMesh) {
-      const positions = fruitMesh.geometry.attributes.position;
-      for (let i = 0; i < positions.count; i++) {
-        vertex.fromBufferAttribute(positions, i).applyMatrix4(fruitMesh.matrixWorld);
-        if (Math.abs(vertex.z - plantZ) < .19) fruitBounds.expandByPoint(vertex);
-      }
-    }
-    const fruit = fruitBounds.isEmpty() ? new THREE.Vector3(innerRowX + aisleSide * .14, 1.08, plantZ) :
-      fruitBounds.getCenter(new THREE.Vector3());
     const mobile = holder.clientWidth < 550;
-    const offset = new THREE.Vector3(aisleSide * .64, .10, .24);
-    const right = new THREE.Vector3().crossVectors(camera.up, offset).normalize();
-    const up = new THREE.Vector3().crossVectors(offset, right).normalize();
-    const focus = fruit.clone().addScaledVector(up, -.10);
-    if (!mobile) focus.addScaledVector(right, .14);
-    fruitLabelAnchor = fruit.clone().add(new THREE.Vector3(0,.22,0));
-    const viewHeight = mobile ? .99 : .87;
+    const aisleSide = selected === 'A' ? 1 : -1;
+    const offset = new THREE.Vector3(aisleSide*7,5.3,8.5);
+    const right = new THREE.Vector3().crossVectors(camera.up,offset).normalize();
+    const up = new THREE.Vector3().crossVectors(offset,right).normalize();
+    const crop = zoneCenters[selected].clone().setY(1.25).setZ(-5.1);
+    const focus = crop.clone().addScaledVector(mobile ? up : right,mobile ? -.36 : .85);
+    focusedLabelAnchor = crop.clone().setY(2.85);
+    closeupViewHeight = mobile ? 5.6 : 4.9;
     const aspect = holder.clientWidth / holder.clientHeight;
-    const targetZoom = 2 * Math.max(9.8, 10.3 / aspect) / viewHeight;
+    const targetZoom = 2 * Math.max(9.8, 10.3 / aspect) / closeupViewHeight;
     flyCamera(focus,offset,targetZoom,0,760,() => {
       controls.enabled = true;
     });
@@ -467,7 +441,7 @@ async function makeViewer() {
   return {
     goHome,
     setZone(selected) {
-      for (const [letter,area] of Object.entries(areas)) area.visible = letter === selected;
+      highlightPlants(selected);
       selectCameraZone(selected);
       invalidate();
     },

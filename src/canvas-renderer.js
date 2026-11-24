@@ -79,10 +79,10 @@ export function canvasRenderer(canvas) {
           screen[i+2]=e[2]*x+e[6]*y+e[10]*z+e[14];
         }
         const mat=mesh.material;
-        const groundDepth = mesh.name.startsWith('ZoneHighlight_') ? 2.8 : mesh.name.startsWith('Floor_') ? (mesh.name.endsWith('GroundCover') ? 2.9 : 3) : null;
+        const groundDepth = mesh.name.startsWith('Floor_') ? (mesh.name.endsWith('GroundCover') ? 2.9 : 3) : null;
         const textureColor = textureColors[mat.name];
         const base = textureColor === undefined ? mat.color.clone() : new Color(textureColor);
-        if (mat.emissiveIntensity && mat.emissive.getHex()) base.lerp(mat.emissive,.45);
+        if (mat.emissiveIntensity && mat.emissive.getHex()) base.lerp(mat.emissive,Math.min(.55,mat.emissiveIntensity*1.5));
         const colors=Array.from({length:8},(_,i)=>'#'+base.clone().multiplyScalar(.48+i*.115).getHexString());
         for(const {a,b,c,shade} of faces) {
           const za = screen[a+2], zb = screen[b+2], zc = screen[c+2];
