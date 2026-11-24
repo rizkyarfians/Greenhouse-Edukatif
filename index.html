@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f3f6ef">
+<title>Kebun Melon · Dashboard Greenhouse</title>
+</head>
+<body>
+<header class="topbar"><div class="shell brand-row">
+  <div class="brand"><span class="brand-icon" data-icon="sprout"></span><span>Kebun Melon<small>Simulasi greenhouse</small></span></div>
+  <span class="demo"><i></i> Mode simulasi</span>
+</div></header>
+<main class="shell">
+  <div class="intro"><h1>Pantau kebun melon</h1><p>Lihat kondisi tanaman dan cara air mengalir ke akar melon.</p></div>
+  <div class="dashboard">
+    <section class="stage panel" aria-labelledby="view-title">
+      <div class="section-head"><div><h2 id="view-title">Greenhouse 3D</h2><p>8 baris melon · Sistem irigasi tetes</p></div><span class="stage-icon" data-icon="box"></span></div>
+      <div class="viewport" id="viewport">
+        <img class="fallback" src="./greenhouse-preview.png" alt="Tampilan potong greenhouse melon dengan delapan baris tanaman">
+        <div class="scene-badge" id="scene-badge"><i></i><span>Memuat model 3D…</span></div>
+        <span id="selected-zone" class="selected-zone" aria-live="polite">Zona A dipilih</span>
+        <section class="zone-card" id="zone-card" hidden aria-labelledby="zone-card-title">
+          <div class="zone-card-head">
+            <div><h3 id="zone-card-title">Zona A</h3><p>4 baris · 160 tanaman</p></div>
+            <button id="close-focus" aria-label="Kembali ke tampilan seluruh greenhouse" title="Lihat seluruh greenhouse">×</button>
+          </div>
+          <dl class="zone-stats">
+            <div><dt>Suhu udara</dt><dd id="focus-temperature"></dd></div>
+            <div><dt>Kelembapan udara</dt><dd id="focus-humidity"></dd></div>
+            <div><dt>Kelembapan media</dt><dd id="focus-media"></dd></div>
+            <div><dt>Tandon air</dt><dd id="focus-water"></dd></div>
+            <div><dt>Tandon nutrisi</dt><dd id="focus-nutrient"></dd></div>
+          </dl>
+          <div class="zone-simulation">
+            <div class="zone-status"><strong id="focus-stage" role="status">Siap disiram</strong><span id="focus-pump">Pompa mati</span></div>
+            <p id="focus-explanation">Pilih Coba siram untuk melihat air menetes ke akar.</p>
+            <progress id="focus-progress" max="100" value="0" aria-label="Progres siklus penyiraman" hidden></progress>
+          </div>
+        </section>
+        <button id="reset" class="icon-button" aria-label="Kembalikan sudut pandang" title="Kembalikan sudut pandang" disabled><span data-icon="reset"></span></button>
+      </div>
+      <div class="viewer-bar">
+        <span id="viewer-help"><span data-icon="move"></span> Klik zona · Geser untuk putar · Gulir untuk zoom</span>
+        <button id="roof" disabled><span data-icon="home"></span><span id="roof-text">Tampilkan atap</span></button>
+      </div>
+    </section>
+    <aside class="readings" aria-labelledby="sensor-title">
+      <div class="readings-head"><h2 id="sensor-title">Kondisi kebun</h2><span data-icon="activity"></span></div>
+      <div class="metrics" id="metrics"></div>
+      <section class="pump panel">
+        <div class="pump-head"><span class="tile-icon mint" data-icon="pump"></span><div><h3>Pompa air</h3><p id="pump-description">Menunggu penyiraman</p></div><span class="pump-state" id="pump-state" role="status">Mati</span></div>
+        <fieldset class="zones"><legend>Pilih zona yang mau disiram</legend><div>
+          <label><input type="radio" name="zone" value="A" checked><span>Zona A</span></label>
+          <label><input type="radio" name="zone" value="B"><span>Zona B</span></label>
+        </div></fieldset>
+        <button id="water"><span data-icon="drop"></span><span id="water-label">Coba siram</span></button>
+      </section>
+    </aside>
+  </div>
+</main>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
