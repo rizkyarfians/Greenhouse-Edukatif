@@ -18,3 +18,9 @@ Viewer menggunakan WebGL jika tersedia. Jika perangkat tidak menyediakan WebGL, 
 Di beranda, beri nama sesi lalu pilih **Mulai simulasi**. Gunakan **Simpan simulasi** untuk menyimpan zona, pembacaan sensor, level tandon, kelembapan tiap zona, dan tampilan atap. Buka kembali sesi dari **Simulasi tersimpan**. Pompa mulai dalam keadaan mati saat sesi dibuka.
 
 Simpanan disimpan di penyimpanan lokal browser untuk alamat situs yang sama. Mode ini belum menggunakan akun atau sinkronisasi antardevice.
+
+## Jenis lahan
+
+Pilih **Greenhouse Melon** untuk mencoba irigasi tetes di Zona A dan B, atau **Lahan Terbuka Padi** untuk melihat satu petak sawah dengan tanah, bibit padi, pematang, dan saluran air dalam 3D. Di sawah, tombol **Alirkan air** dan **Kuras air** mengubah genangan. Kelembapan tanah naik saat pengisian. Nilai pengairan adalah data simulasi, dengan tinggi air diperbesar pada model 3D.
+
+Simpanan menyimpan jenis lahan dan kondisi terakhir. Simpanan dari versi sebelumnya tetap dibuka sebagai Greenhouse Melon. Saat membuka simpanan sawah, pintu air mulai dalam keadaan tertutup.

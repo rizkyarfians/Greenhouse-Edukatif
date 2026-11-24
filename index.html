@@ -4,20 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f3f6ef">
-<title>Kebun Melon · Dashboard Greenhouse</title>
+<title>Greenhouse Edukatif · Simulasi Pertanian</title>
 </head>
 <body>
 <header class="topbar"><div class="shell brand-row">
-  <div class="brand"><span class="brand-icon" data-icon="sprout"></span><span>Kebun Melon<small>Simulasi greenhouse</small></span></div>
+  <div class="brand"><span class="brand-icon" data-icon="sprout"></span><span>Simulasi Pertanian<small>Greenhouse dan lahan terbuka</small></span></div>
   <span class="demo"><i></i> Mode tamu</span>
 </div></header>
 <main class="shell">
   <section id="guest-home" class="guest-home" aria-labelledby="home-title">
     <div class="home-hero panel">
       <div class="home-copy">
-        <h1 id="home-title" tabindex="-1">Jelajahi kebun melon</h1>
-        <p>Kenali greenhouse dalam 3D, bandingkan kondisi Zona A dan B, lalu coba cara kerja irigasi tetes.</p>
+        <h1 id="home-title" tabindex="-1">Pilih lahan untuk simulasi</h1>
+        <p>Lihat tanaman dan coba cara kerja pengairan di tiap lahan.</p>
         <form id="start-simulation" class="start-simulation">
+          <fieldset class="land-options">
+            <legend>Jenis lahan</legend>
+            <label class="land-option">
+              <input type="radio" name="land-type" value="greenhouse" checked>
+              <span class="land-card"><span class="land-icon" data-land-icon="greenhouse" aria-hidden="true"></span><span><strong>Greenhouse Melon</strong><small>Zona A/B dan irigasi tetes</small></span></span>
+            </label>
+            <label class="land-option">
+              <input type="radio" name="land-type" value="rice">
+              <span class="land-card"><span class="land-icon" data-land-icon="rice" aria-hidden="true"></span><span><strong>Lahan Terbuka Padi</strong><small>Petak sawah dan saluran air</small></span></span>
+            </label>
+          </fieldset>
           <label for="project-name">Nama simulasi</label>
           <div class="start-controls">
             <input id="project-name" name="project" type="text" maxlength="60" placeholder="Kebun Melon">
@@ -25,7 +36,6 @@
           </div>
         </form>
       </div>
-      <img class="home-preview" src="./greenhouse-preview.png" alt="Pratinjau model greenhouse melon">
     </div>
     <section class="saved-projects" aria-labelledby="saved-title">
       <h2 id="saved-title">Simulasi tersimpan</h2>
@@ -40,14 +50,14 @@
     <div>
       <button type="button" id="back-home" class="back-home">← Beranda</button>
       <h1 id="simulation-title" tabindex="-1">Kebun Melon</h1>
-      <p>Lihat kondisi tanaman dan cara air mengalir ke akar melon.</p>
+      <p id="simulation-description"></p>
     </div>
     <div class="save-controls">
       <button type="button" class="primary-button" id="save-simulation" disabled>Simpan simulasi</button>
       <p id="save-message" role="status"></p>
     </div>
   </div>
-  <div class="dashboard">
+  <div class="dashboard" id="greenhouse-dashboard" hidden>
     <section class="stage panel" aria-labelledby="view-title">
       <div class="section-head"><div><h2 id="view-title">Greenhouse 3D</h2><p>8 baris melon · Sistem irigasi tetes</p></div><span class="stage-icon" data-icon="box"></span></div>
       <div class="viewport" id="viewport">
@@ -89,6 +99,31 @@
           <label><input type="radio" name="zone" value="B"><span>Zona B</span></label>
         </div></fieldset>
         <button id="water"><span data-icon="drop"></span><span id="water-label">Coba siram</span></button>
+      </section>
+    </aside>
+  </div>
+  <div class="dashboard" id="rice-dashboard" hidden>
+    <section class="stage panel" aria-labelledby="rice-view-title">
+      <div class="section-head"><div><h2 id="rice-view-title">Sawah Padi 3D</h2><p>Petak tanah, bibit padi, pematang, dan saluran air</p></div></div>
+      <div id="rice-viewport" class="viewport rice-viewport">
+        <div id="rice-scene-status" class="scene-badge" role="status"><i></i><span>Memuat model 3D…</span></div>
+        <button id="rice-reset" type="button" class="icon-button rice-reset" disabled>Reset kamera</button>
+      </div>
+      <div class="viewer-bar"><span>Geser untuk putar · Gulir untuk zoom</span></div>
+    </section>
+    <aside class="readings" aria-labelledby="rice-readings-title">
+      <div class="readings-head"><h2 id="rice-readings-title">Kondisi petak sawah</h2></div>
+      <div class="metrics">
+        <article class="metric soil"><h3>Kelembapan tanah</h3><p class="metric-value"><span id="rice-soil-moisture"></span><small>%</small></p></article>
+        <article class="metric water"><h3>Genangan air</h3><p class="metric-value"><span id="rice-water-depth"></span><small>cm</small></p></article>
+      </div>
+      <section class="pump panel" aria-labelledby="rice-irrigation-title">
+        <div class="pump-head"><div><h3 id="rice-irrigation-title">Pengairan sawah</h3><p id="rice-irrigation-status" role="status">Pintu air tertutup</p></div></div>
+        <div class="rice-actions">
+          <button type="button" class="primary-button" id="rice-fill" disabled>Alirkan air</button>
+          <button type="button" class="secondary-button" id="rice-drain" disabled>Kuras air</button>
+        </div>
+        <p class="rice-note">Data simulasi. Genangan diperbesar di model agar mudah terlihat.</p>
       </section>
     </aside>
   </div>

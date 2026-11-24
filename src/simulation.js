@@ -29,7 +29,7 @@ get('metrics').innerHTML = metrics.map(({key,title,unit,note,tone,icon}) => `
     <h3>${title}</h3><p class="metric-value"><span id="${key}-value"></span><small>${unit}</small></p>
     <p class="metric-note">${note}</p>${unit === '%' ? `<div class="bar" aria-hidden="true"><span id="${key}-bar"></span></div>` : ''}
   </article>`).join('');
-for (const element of document.querySelectorAll('#simulation-view [data-icon]')) {
+for (const element of document.querySelectorAll('#greenhouse-dashboard [data-icon]')) {
   element.innerHTML = icons[element.dataset.icon];
   element.setAttribute('aria-hidden', 'true');
 }

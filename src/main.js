@@ -1,5 +1,7 @@
 import './style.css';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
+import greenhouseIcon from 'lucide-static/icons/house.svg?raw';
+import riceIcon from 'lucide-static/icons/wheat.svg?raw';
 
 const get = id => document.getElementById(id);
 const home = get('guest-home');
@@ -8,6 +10,22 @@ const savedList = get('saved-list');
 const homeMessage = get('home-message');
 const saveButton = get('save-simulation');
 const saveMessage = get('save-message');
+const landTypes = {
+  greenhouse: {
+    label: 'Greenhouse Melon',
+    defaultName: 'Kebun Melon',
+    description: 'Pantau Zona A dan B, lalu coba irigasi tetes untuk tanaman melon.',
+    load: () => import('./simulation.js'),
+  },
+  rice: {
+    label: 'Lahan Terbuka Padi',
+    defaultName: 'Sawah Padi',
+    description: 'Amati tanaman padi dan perubahan genangan saat air dialirkan atau dikuras.',
+    load: () => import('./rice-field.js'),
+  },
+};
+const landInputs = [...document.querySelectorAll('input[name=land-type]')];
+const projectName = get('project-name');
 const storagePrefix = 'greenhouse-edukatif:guest:v1:';
 const dateFormat = new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
@@ -19,21 +37,38 @@ let lastSavedState;
 
 document.querySelector('.brand-icon').innerHTML = sprout;
 document.querySelector('.brand-icon').setAttribute('aria-hidden', 'true');
+document.querySelector('[data-land-icon=greenhouse]').innerHTML = greenhouseIcon;
+document.querySelector('[data-land-icon=rice]').innerHTML = riceIcon;
+
+function selectedLandType() {
+  return landInputs.find(input => input.checked).value;
+}
+
+function percentage(value) {
+  return Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
+function validState(type, state) {
+  if (type === 'rice') {
+    return Number.isInteger(state.waterDepth) && state.waterDepth >= 0 && state.waterDepth <= 5 &&
+      percentage(state.soilMoisture);
+  }
+  if (!['A', 'B'].includes(state.zone) || ![null, 'A', 'B'].includes(state.completedZone) ||
+      typeof state.roofVisible !== 'boolean') return false;
+  const {temperature, humidity, water, nutrient} = state.readings;
+  return Number.isFinite(temperature) &&
+    [humidity, water, nutrient, state.zoneMedia.A, state.zoneMedia.B].every(percentage);
+}
 
 function parseProject(json, key) {
   try {
     const project = JSON.parse(json);
-    const {id, name, updatedAt, state} = project;
+    const {id, name, updatedAt, state, type = 'greenhouse'} = project;
     if (!/^[a-f0-9]{32}$/.test(id) || key !== storagePrefix + id ||
         typeof name !== 'string' || !name.trim() ||
         typeof updatedAt !== 'number' || !Number.isFinite(new Date(updatedAt).getTime())) return null;
-    if (!['A', 'B'].includes(state.zone) || ![null, 'A', 'B'].includes(state.completedZone) ||
-        typeof state.roofVisible !== 'boolean') return null;
-    const {temperature, humidity, water, nutrient} = state.readings;
-    const percentages = [humidity, water, nutrient, state.zoneMedia.A, state.zoneMedia.B];
-    if (!Number.isFinite(temperature) ||
-        !percentages.every(value => Number.isFinite(value) && value >= 0 && value <= 100)) return null;
-    return project;
+    if (!Object.hasOwn(landTypes, type) || !validState(type, state)) return null;
+    return {...project, type};
   } catch {
     return null;
   }
@@ -62,7 +97,8 @@ function renderSavedProjects() {
     const name = document.createElement('h3');
     name.textContent = project.name;
     const summary = document.createElement('p');
-    summary.textContent = `Zona ${project.state.zone} · Disimpan ${dateFormat.format(project.updatedAt)}`;
+    const plot = project.type === 'greenhouse' ? `Zona ${project.state.zone}` : `Genangan ${project.state.waterDepth} cm`;
+    summary.textContent = `${landTypes[project.type].label} · ${plot} · Disimpan ${dateFormat.format(project.updatedAt)}`;
     info.append(name, summary);
     const open = document.createElement('button');
     open.className = 'secondary-button';
@@ -79,14 +115,20 @@ async function openProject(project) {
   activeProject = project;
   saveButton.disabled = true;
   saveMessage.textContent = '';
+  simulation = undefined;
+  const landType = landTypes[project.type];
   get('simulation-title').textContent = project.name;
+  get('simulation-description').textContent = landType.description;
+  get('greenhouse-dashboard').hidden = project.type !== 'greenhouse';
+  get('rice-dashboard').hidden = project.type !== 'rice';
   home.hidden = true;
   simulationView.hidden = false;
   get('simulation-title').focus();
   window.scrollTo(0, 0);
   try {
-    simulation ??= await import('./simulation.js');
+    const module = await landType.load();
     if (activeProject !== project) return;
+    simulation = module;
     simulation.openSimulation(project.state);
     lastSavedState = JSON.stringify(simulation.snapshotSimulation());
     saveButton.disabled = false;
@@ -97,13 +139,20 @@ async function openProject(project) {
   }
 }
 
+for (const input of landInputs) {
+  input.addEventListener('change', () => {
+    projectName.placeholder = landTypes[selectedLandType()].defaultName;
+  });
+}
+
 get('start-simulation').addEventListener('submit', event => {
   event.preventDefault();
-  const name = get('project-name').value.trim() || 'Kebun Melon';
+  const type = selectedLandType();
+  const name = projectName.value.trim() || landTypes[type].defaultName;
   const id = Array.from(crypto.getRandomValues(new Uint32Array(4)), part =>
     part.toString(16).padStart(8, '0')).join('');
-  get('project-name').value = '';
-  openProject({id, name});
+  projectName.value = '';
+  openProject({id, name, type});
 });
 
 saveButton.addEventListener('click', () => {
