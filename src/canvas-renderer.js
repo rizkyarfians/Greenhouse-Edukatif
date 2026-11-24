@@ -82,6 +82,7 @@ export function canvasRenderer(canvas) {
         const groundDepth = mesh.name.startsWith('Floor_') ? (mesh.name.endsWith('GroundCover') ? 2.9 : 3) : null;
         const textureColor = textureColors[mat.name];
         const base = textureColor === undefined ? mat.color.clone() : new Color(textureColor);
+        if (mat.userData.zoneMuted && textureColor !== undefined) base.multiplyScalar(.52);
         if (mat.emissiveIntensity && mat.emissive.getHex()) base.lerp(mat.emissive,Math.min(.55,mat.emissiveIntensity*1.5));
         const colors=Array.from({length:8},(_,i)=>'#'+base.clone().multiplyScalar(.48+i*.115).getHexString());
         for(const {a,b,c,shade} of faces) {

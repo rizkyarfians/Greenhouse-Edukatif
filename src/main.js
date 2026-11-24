@@ -210,7 +210,7 @@ async function makeViewer() {
   let overviewZoom = 1;
   const roof = model.getObjectByName('Roof');
   const structuralGroups = [];
-  const frameMaterials = [];
+  const frameMeshes = [];
   model.traverse(object => {
     if (object.name === 'Frame' || /^Row_[AB]\d{2}_Trellis$/.test(object.name)) structuralGroups.push(object);
   });
@@ -218,14 +218,15 @@ async function makeViewer() {
     group.traverse(object => {
       if (!object.isMesh) return;
       object.material = object.material.clone();
-      frameMaterials.push(object.material);
+      frameMeshes.push(object);
     });
   }
   let frameOpacity = 1;
   function setFrameOpacity(opacity) {
     frameOpacity = opacity;
     structuralGroups.forEach(group => group.visible = opacity > .025);
-    for (const material of frameMaterials) {
+    for (const mesh of frameMeshes) {
+      const material = mesh.material;
       material.opacity = opacity;
       material.transparent = opacity < 1;
       material.depthWrite = opacity === 1;
@@ -248,25 +249,33 @@ async function makeViewer() {
   const zoneCenters = Object.fromEntries(Object.entries(rowsByZone).map(([letter,rows]) => [
     letter,new THREE.Vector3((rows[0]+rows.at(-1))/2,0,-10),
   ]));
-  const plantMaterials = {A:[],B:[]};
+  const zoneMaterials = {A:[],B:[]};
   model.traverse(mesh => {
-    const match = /^Row_([AB])\d{2}_(Foliage|YoungFoliage|Vine|Melon)$/.exec(mesh.name);
+    const match = /^Row_([AB])\d{2}_(.+)$/.exec(mesh.name);
     if (!mesh.isMesh || !match) return;
     const [,letter,part] = match;
-    const original = mesh.material;
-    const highlighted = original.clone();
+    const highlighted = mesh.material.clone();
+    const crop = /^(Foliage|YoungFoliage|Vine|Melon)$/.test(part);
     highlighted.emissive.setHex(part === 'Melon' ? 0xa4ed73 : 0x68cf54);
-    highlighted.emissiveIntensity = part === 'Melon' ? .32 : .21;
-    plantMaterials[letter].push({mesh,original,highlighted});
+    highlighted.emissiveIntensity = crop ? (part === 'Melon' ? .36 : .26) : .08;
+
+    // Keep depth and silhouettes intact while toning down the unselected rows.
+    const muted = mesh.material.clone();
+    muted.color.multiplyScalar(.52);
+    muted.emissive.setHex(0x9ba99c);
+    muted.emissiveIntensity = .28;
+    muted.userData.zoneMuted = true;
+    zoneMaterials[letter].push({mesh,highlighted,muted});
   });
-  function highlightPlants(selected) {
-    for (const [letter,plants] of Object.entries(plantMaterials)) {
-      for (const {mesh,original,highlighted} of plants) {
-        mesh.material = letter === selected ? highlighted : original;
+  function highlightZone(selected) {
+    for (const [letter,parts] of Object.entries(zoneMaterials)) {
+      for (const {mesh,highlighted,muted} of parts) {
+        mesh.material = letter === selected ? highlighted : muted;
       }
     }
+    setFrameOpacity(frameOpacity);
   }
-  highlightPlants(zone);
+  highlightZone(zone);
 
   const zoneLabels = Object.entries(zoneCenters).map(([letter,position]) => {
     const label = document.createElement('button');
@@ -471,7 +480,7 @@ async function makeViewer() {
   return {
     goHome,
     setZone(selected) {
-      highlightPlants(selected);
+      highlightZone(selected);
       selectCameraZone(selected);
       invalidate();
     },
