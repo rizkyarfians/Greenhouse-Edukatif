@@ -162,6 +162,8 @@ async function makeViewer() {
   controls.addEventListener('change',invalidate);
   let cameraFrame;
   let switchTimer;
+  let tourFrame;
+  controls.addEventListener('start', stopZoneTour);
   let inCloseup = false;
   let focusedZone;
   let focusedLabelAnchor;
@@ -333,7 +335,34 @@ async function makeViewer() {
     invalidate();
   }
 
+  function stopZoneTour() {
+    cancelAnimationFrame(tourFrame);
+    tourFrame = undefined;
+  }
+
+  function playZoneTour() {
+    if (reduceMotion.matches) return;
+    const startingZ = controls.target.z;
+    const travel = -14.0;
+    const duration = 8500;
+    let started;
+    function advance(now) {
+      started ??= now;
+      const progress = Math.min(1,(now-started)/duration);
+      const eased = progress*progress*(3-2*progress);
+      const deltaZ = startingZ + travel*eased - controls.target.z;
+      controls.target.z += deltaZ;
+      camera.position.z += deltaZ;
+      focusedLabelAnchor.z += deltaZ;
+      controls.update();
+      invalidate();
+      tourFrame = progress < 1 ? requestAnimationFrame(advance) : undefined;
+    }
+    tourFrame = requestAnimationFrame(advance);
+  }
+
   function cancelCameraSequence() {
+    stopZoneTour();
     cancelAnimationFrame(cameraFrame);
     clearTimeout(switchTimer);
     cameraFrame = undefined;
@@ -400,7 +429,7 @@ async function makeViewer() {
     const offset = new THREE.Vector3(aisleSide*7,5.3,8.5);
     const right = new THREE.Vector3().crossVectors(camera.up,offset).normalize();
     const up = new THREE.Vector3().crossVectors(offset,right).normalize();
-    const crop = zoneCenters[selected].clone().setY(1.25).setZ(-5.1);
+    const crop = zoneCenters[selected].clone().setY(1.25).setZ(-3);
     const focus = crop.clone().addScaledVector(mobile ? up : right,mobile ? -.36 : .85);
     focusedLabelAnchor = crop.clone().setY(2.85);
     closeupViewHeight = mobile ? 5.6 : 4.9;
@@ -408,6 +437,7 @@ async function makeViewer() {
     const targetZoom = 2 * Math.max(9.8, 10.3 / aspect) / closeupViewHeight;
     flyCamera(focus,offset,targetZoom,0,760,() => {
       controls.enabled = true;
+      playZoneTour();
     });
   }
 
