@@ -395,4 +395,5 @@ export const crops = [
     "unit": "tanaman"
   }
 ];
+export const allCrops=[...crops,{"id":"melon","name":"Melon","species":"Cucumis melo","temp":[23,30],"tempLimit":[16,36],"ph":[6,7],"phLimit":[5,8],"soils":["loam","sandy"],"system":"dry","water":"high","days":[70,100],"spacing":[1,0.6],"waterMm":null,"unit":"tanaman"}];
 export const modelVersion='screening-v0.1';

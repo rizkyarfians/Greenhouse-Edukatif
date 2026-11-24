@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {landType,cropChoices,climateForType,sameLandType} from '../src/land-type.js';
+test('legacy open field',()=>assert.equal(landType(undefined),'open-field'));
+test('greenhouse type',()=>assert.equal(landType('greenhouse'),'greenhouse'));
+test('greenhouse excludes rice',()=>assert.deepEqual(cropChoices([{id:'rice'},{id:'melon'}],'greenhouse'),[{id:'melon'}]));
+test('outdoor excludes greenhouse melon',()=>assert.deepEqual(cropChoices([{id:'rice'},{id:'melon'}],'open-field'),[{id:'rice'}]));
+test('no outdoor temperature substituted',()=>assert.equal(climateForType({temperature:28},'greenhouse',null).temperature,null));
+test('indoor input respected',()=>assert.equal(climateForType({temperature:28},'greenhouse',24).temperature,24));
+test('outdoor retains climate',()=>assert.equal(climateForType({temperature:28},'open-field',24).temperature,28));
+test('type mismatch',()=>assert.equal(sameLandType('greenhouse',undefined),false));

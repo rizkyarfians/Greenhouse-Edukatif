@@ -1,7 +1,10 @@
 import './land-scanner.css';
 import {measure} from './land-geometry.js';
+import {landType} from './land-type.js';
 const $=id=>document.getElementById(id);
 const key='automotion.land.v1';
+const requested=new URLSearchParams(location.search).get('type');
+try{const saved=JSON.parse(localStorage.getItem(key)||'null');$('land-type').value=landType(requested||saved?.landType);}catch{$('land-type').value=landType(requested);}
 let points=[], edit=-1, stream=null, opening=false, cameraRequest=0, locating=false, positionRequest=0;
 const fmt=(n,d=1)=>n.toLocaleString('id-ID',{maximumFractionDigits:d});
 const status=t=>{$('status').textContent=t;};
@@ -70,9 +73,9 @@ $('manual-form').addEventListener('submit',e=>{e.preventDefault();if(locating){s
 $('cancel-edit').addEventListener('click',resetEdit);
 $('undo').addEventListener('click',()=>{points.pop();resetEdit();render();});
 $('clear').addEventListener('click',()=>{if(!confirm('Kosongkan patok yang sedang diedit? Simpanan tetap tersedia.'))return;positionRequest++;locating=false;points=[];resetEdit();status('Patok dikosongkan.');render();});
-function project(){const m=measure(points);if(!m.valid)return null;return {version:1,name:$('project-name').value.trim()||'Lahan tanpa nama',points:points.map(p=>({...p})),areaM2:m.area,perimeterM:m.perimeter,center:m.center,updatedAt:new Date().toISOString(),method:'local-tangent-plane-estimate'};}
+function project(){const m=measure(points);if(!m.valid)return null;return {version:1,landType:landType($('land-type').value),name:$('project-name').value.trim()||'Lahan tanpa nama',points:points.map(p=>({...p})),areaM2:m.area,perimeterM:m.perimeter,center:m.center,updatedAt:new Date().toISOString(),method:'local-tangent-plane-estimate'};}
 $('save').addEventListener('click',()=>{const p=project();if(!p)return;try{if(localStorage.getItem(key)&&!confirm('Ganti profil lahan yang tersimpan di browser ini?'))return;localStorage.setItem(key,JSON.stringify(p));saveStatus('Profil disimpan di browser ini: '+p.name);}catch(e){saveStatus('Gagal menyimpan. Gunakan Ekspor GeoJSON.');}});
-$('restore').addEventListener('click',()=>{if(locating){saveStatus('Tunggu GPS selesai.');return;}try{const raw=localStorage.getItem(key);if(!raw){saveStatus('Belum ada profil tersimpan.');return;}const p=JSON.parse(raw);if(p.version!==1||!measure(p.points).valid)throw Error('Invalid');if(points.length&&!confirm('Ganti patok saat ini dengan profil tersimpan?'))return;points=p.points.map(q=>({lat:q.lat,lon:q.lon,accuracy:Number.isFinite(q.accuracy)&&q.accuracy>=0?q.accuracy:null,source:q.source==='gps'?'gps':'manual',capturedAt:q.capturedAt}));$('project-name').value=typeof p.name==='string'?p.name:'';resetEdit();render();saveStatus('Profil dibuka.');}catch(e){saveStatus('Simpanan tidak tersedia atau rusak.');}});
+$('restore').addEventListener('click',()=>{if(locating){saveStatus('Tunggu GPS selesai.');return;}try{const raw=localStorage.getItem(key);if(!raw){saveStatus('Belum ada profil tersimpan.');return;}const p=JSON.parse(raw);if(p.version!==1||!measure(p.points).valid)throw Error('Invalid');if(points.length&&!confirm('Ganti patok saat ini dengan profil tersimpan?'))return;points=p.points.map(q=>({lat:q.lat,lon:q.lon,accuracy:Number.isFinite(q.accuracy)&&q.accuracy>=0?q.accuracy:null,source:q.source==='gps'?'gps':'manual',capturedAt:q.capturedAt}));$('project-name').value=typeof p.name==='string'?p.name:'';$('land-type').value=landType(p.landType);resetEdit();render();saveStatus('Profil dibuka.');}catch(e){saveStatus('Simpanan tidak tersedia atau rusak.');}});
 $('delete-save').addEventListener('click',()=>{if(!confirm('Hapus profil yang tersimpan di browser ini?'))return;try{localStorage.removeItem(key);saveStatus('Simpanan dihapus.');}catch(e){saveStatus('Gagal menghapus simpanan.');}});
 $('download').addEventListener('click',()=>{const p=project();if(!p)return;let ring=p.points.map(q=>[q.lon,q.lat]);const xy=measure(p.points).xy;const signed=xy.reduce((s,a,i)=>{const b=xy[(i+1)%xy.length];return s+a[0]*b[1]-b[0]*a[1];},0);if(signed<0)ring.reverse();ring.push([...ring[0]]);const geo={type:'Feature',geometry:{type:'Polygon',coordinates:[ring]},properties:p};const url=URL.createObjectURL(new Blob([JSON.stringify(geo,null,2)],{type:'application/geo+json'}));const a=document.createElement('a');a.href=url;a.download='automotion-land.geojson';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopCamera();positionRequest++;locating=false;render();}});

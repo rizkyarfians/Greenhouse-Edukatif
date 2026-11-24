@@ -34,3 +34,7 @@ Simpan rencana tanaman dari Cycle 3 lalu buka rencana 3D. Terrain datar dibentuk
 ## Beranda simulasi guest
 
 Mode greenhouse melon dan lahan terbuka padi dari feature/guest-simulation dipulihkan ke main, termasuk aset GLB padi, penyimpanan guest dan detail perangkat. Simulasi langsung tidak membutuhkan scan. Fitur scan, iklim, rekomendasi dan farm planner tetap terpisah.
+
+## Jenis lahan lintas modul
+
+Beranda menyediakan simulasi langsung greenhouse melon dan sawah padi, serta dua jalur scan. Profil scan menyimpan landType; profil lama dianggap open-field. Climate adalah iklim luar bangunan. Screening greenhouse berbasis tanah memakai suhu indoor yang diinput pengguna (tidak otomatis memakai suhu outdoor), lima kandidat awal termasuk melon; screening outdoor tetap 10 komoditas. Farm planner menampilkan garis rangka konseptual untuk greenhouse dan memvalidasi jenis profil/rencana. Belum mencakup hidroponik, desain struktur/atap, atau pengukuran kondisi indoor. Tes tambahan: node --test tests/land-type.test.js.

@@ -3,22 +3,24 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import './land-scanner.css';
 import './farm.css';
 import {measure} from './land-geometry.js';
-import {crops} from './crop-database.js';
+import {allCrops} from './crop-database.js';
+import {landType,cropChoices,sameLandType} from './land-type.js';
 import {makeLayout} from './farm-layout.js';
 const $=id=>document.getElementById(id),key='automotion.farm.v1';
 const fmt=(v,d=1)=>Number.isFinite(v)?v.toLocaleString('id-ID',{maximumFractionDigits:d}):'—';
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch{return null;}};
 const land=read('automotion.land.v1'),plan=read('automotion.recommendation.v1'),m=land&&measure(land.points);
 const fingerprint=m?.valid?JSON.stringify(land.points.map(q=>[q.lat,q.lon])):null;
-const crop=crops.find(c=>c.id===plan?.selected?.id);
-const valid=m?.valid&&plan?.version===1&&plan.landFingerprint===fingerprint&&crop&&['candidate','conditional','incomplete'].includes(plan.assessment?.verdict);
+const type=landType(land?.landType),greenhouse=type==='greenhouse';
+const crop=cropChoices(allCrops,type).find(c=>c.id===plan?.selected?.id);
+const valid=m?.valid&&plan?.version===1&&plan.landFingerprint===fingerprint&&sameLandType(plan.landType,type)&&crop&&['candidate','conditional','incomplete'].includes(plan.assessment?.verdict);
 let layout=null,viewer=null,selectedZone='all',selectedDevice=null,devices=[],active=null,waterTimer=null,wet={A:45,B:45};
 function stat(label,value){const d=document.createElement('div'),s=document.createElement('small'),v=document.createElement('strong');s.textContent=label;v.textContent=value;d.append(s,v);return d;}
 function device(id,name,type,zone,position){return {id,name,type,zone,position};}
 function getDevices(l){
  const list=[];for(const zone of ['A','B']){const p=l.anchors[zone];if(p){list.push(device('soil-'+zone,'Sensor tanah '+zone,'soil',zone,p),device('valve-'+zone,'Katup '+zone,'valve',zone,[p[0],p[1]]));}}
  const p=l.anchors.A||l.anchors.B;
- if(p){list.push(device('weather','Sensor cuaca','weather',null,p),device('pump','Pompa air','pump',null,p),device('tank','Tandon air','tank',null,p));}
+ if(p){list.push(device('weather',greenhouse?'Sensor udara dalam greenhouse':'Sensor cuaca','weather',null,p),device('pump','Pompa air','pump',null,p),device('tank','Tandon air','tank',null,p));}
  return list;
 }
 function deviceNote(d){
@@ -51,9 +53,10 @@ function initViewer(container,l){
  const shape=new THREE.Shape();l.polygon.forEach((p,i)=>i?shape.lineTo(p[0]*scale,p[1]*scale):shape.moveTo(p[0]*scale,p[1]*scale));shape.closePath();
  const earth=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.6,bevelEnabled:false}),[new THREE.MeshStandardMaterial({color:crop.system==='paddy'?0x859b70:0x987a52,roughness:1}),new THREE.MeshStandardMaterial({color:0x725039,roughness:1})]);earth.rotation.x=-Math.PI/2;earth.position.y=-.6;scene.add(earth);
  const outlinePoints=l.polygon.map(p=>world(p[0],p[1],.025));outlinePoints.push(outlinePoints[0].clone());scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(outlinePoints),new THREE.LineBasicMaterial({color:0x52684d})));
+ const frameGroup=new THREE.Group();if(greenhouse){const frameHeight=2.5;const lines=[];for(let i=0;i<l.polygon.length;i++){const a=l.polygon[i],b=l.polygon[(i+1)%l.polygon.length];lines.push(world(a[0],a[1],0),world(a[0],a[1],frameHeight),world(a[0],a[1],frameHeight),world(b[0],b[1],frameHeight));}frameGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lines),new THREE.LineBasicMaterial({color:0x879b9b,transparent:true,opacity:.8})));scene.add(frameGroup);}
  const parts={A:[],B:[]},waterLines={A:[],B:[]},markers=[],dummy=new THREE.Object3D();
  const baseSize=Math.max(.055,Math.min(.35,Math.min(...l.spacing)*scale*.42));
- const style={rice:[0x4c8838,.85,1],maize:[0x558b38,1.8,.8],soybean:[0x4f803d,.65,1.3],groundnut:[0x659341,.5,1.4],chili:[0x387c3e,1.2,1],tomato:[0x427e3c,1.2,1.25],cabbage:[0x76a459,.45,1.6],potato:[0x56833c,.65,1.3],cucumber:[0x4d8a46,.8,1.2],shallot:[0x6c9149,1.05,.65]}[crop.id];
+ const style={rice:[0x4c8838,.85,1],maize:[0x558b38,1.8,.8],soybean:[0x4f803d,.65,1.3],groundnut:[0x659341,.5,1.4],chili:[0x387c3e,1.2,1],tomato:[0x427e3c,1.2,1.25],cabbage:[0x76a459,.45,1.6],potato:[0x56833c,.65,1.3],cucumber:[0x4d8a46,.8,1.2],shallot:[0x6c9149,1.05,.65],melon:[0x659847,.9,1.4]}[crop.id];
  for(const z of ['A','B']){
   const pp=l.samples.filter(p=>p.zone===z);
   const mat=new THREE.MeshStandardMaterial({color:style[0],roughness:.9}),geo=crop.id==='cabbage'?new THREE.SphereGeometry(1,7,5):new THREE.ConeGeometry(1,2,5);
@@ -77,7 +80,7 @@ function initViewer(container,l){
  renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);
  let frame=0,waterZone=null;
  function animate(t){if(!waterZone)return;for(const p of waterLines[waterZone])p.material.opacity=.65+.35*Math.sin(t/180);draw();frame=requestAnimationFrame(animate);}
- return {reset,setZone(z){for(const k of ['A','B'])for(const p of parts[k]){p.mesh.material.color.setHex(p.color);if(z!=='all'&&z!==k)p.mesh.material.color.multiplyScalar(.42);p.mesh.material.emissive.setHex(z===k?0x4ea97a:0);p.mesh.material.emissiveIntensity=z===k?.2:0;}draw();},selectDevice(id){for(const p of markers){p.scale.setScalar(p.userData.device===id?1.5:1);p.material.emissiveIntensity=p.userData.device===id?.9:.15;}draw();},setWater(z){cancelAnimationFrame(frame);waterZone=z;for(const k of ['A','B'])for(const p of waterLines[k]){p.material.color.setHex(z===k?0x19bce9:0x537c94);p.material.opacity=z===k?1:.45;}draw();if(z)frame=requestAnimationFrame(animate);},dispose(){cancelAnimationFrame(frame);observer.disconnect();controls.dispose();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const mat of Array.isArray(o.material)?o.material:[o.material])mat.dispose();}});renderer.dispose();renderer.domElement.remove();}};
+ return {reset,toggleFrame(){frameGroup.visible=!frameGroup.visible;draw();return frameGroup.visible;},setZone(z){for(const k of ['A','B'])for(const p of parts[k]){p.mesh.material.color.setHex(p.color);if(z!=='all'&&z!==k)p.mesh.material.color.multiplyScalar(.42);p.mesh.material.emissive.setHex(z===k?0x4ea97a:0);p.mesh.material.emissiveIntensity=z===k?.2:0;}draw();},selectDevice(id){for(const p of markers){p.scale.setScalar(p.userData.device===id?1.5:1);p.material.emissiveIntensity=p.userData.device===id?.9:.15;}draw();},setWater(z){cancelAnimationFrame(frame);waterZone=z;for(const k of ['A','B'])for(const p of waterLines[k]){p.material.color.setHex(z===k?0x19bce9:0x537c94);p.material.opacity=z===k?1:.45;}draw();if(z)frame=requestAnimationFrame(animate);},dispose(){cancelAnimationFrame(frame);observer.disconnect();controls.dispose();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const mat of Array.isArray(o.material)?o.material:[o.material])mat.dispose();}});renderer.dispose();renderer.domElement.remove();}};
 }
 function fallback(l){
  const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 400 300');svg.classList.add('farm-fallback');const k=Math.min(340/l.width,240/l.depth),p=(x,y)=>[200+x*k,150-y*k];
@@ -89,15 +92,15 @@ function generate(){
  const spacing=[$('row-space').valueAsNumber,$('plant-space').valueAsNumber],usable=$('usable').valueAsNumber;
  let next;try{next=makeLayout(m.xy,spacing,usable);}catch(e){$('layout-status').textContent=e.message;return;}
  stopWater();viewer?.dispose();viewer=null;$('farm-view').querySelector('.farm-fallback')?.remove();layout=next;wet={A:45,B:45};devices=getDevices(layout);renderPanel();chooseZone('all');
- try{viewer=initViewer($('farm-view'),layout);$('viewer-status').textContent='3D · Simulasi';$('reset-view').disabled=false;}catch(e){console.warn('3D unavailable',e);$('farm-view').querySelector('canvas')?.remove();fallback(layout);$('viewer-status').textContent='WebGL tidak tersedia · sketsa 2D';$('reset-view').disabled=true;}
+ try{viewer=initViewer($('farm-view'),layout);$('viewer-status').textContent='3D · Simulasi';$('reset-view').disabled=false;$('toggle-frame').disabled=false;$('toggle-frame').textContent='Sembunyikan rangka';}catch(e){console.warn('3D unavailable',e);$('farm-view').querySelector('canvas')?.remove();fallback(layout);$('viewer-status').textContent='WebGL tidak tersedia · sketsa 2D';$('reset-view').disabled=true;$('toggle-frame').disabled=true;}
  $('layout-status').textContent='Layout diperbarui. Simpan jika ingin membukanya kembali.';
 }
-function data(){return {version:1,landFingerprint:fingerprint,cropId:crop.id,planCreatedAt:plan.createdAt,spacing:layout.spacing,usable:layout.usable,capacity:layout.capacity,zoneCounts:layout.allocated,areaM2:layout.area,visualCount:layout.samples.length,updatedAt:new Date().toISOString(),mode:'simulation-only'};}
+function data(){return {version:1,landType:type,landFingerprint:fingerprint,cropId:crop.id,planCreatedAt:plan.createdAt,spacing:layout.spacing,usable:layout.usable,capacity:layout.capacity,zoneCounts:layout.allocated,areaM2:layout.area,visualCount:layout.samples.length,updatedAt:new Date().toISOString(),mode:'simulation-only'};}
 if(!valid){$('farm-info').textContent='Belum ada rencana tanaman yang cocok dengan lahan ini. Kembali ke rekomendasi, pilih komoditas dan simpan rencana lokal.';}
 else{
  $('farm-info').textContent=(typeof land.name==='string'?land.name:'Lahan')+' · '+fmt(m.area)+' m² · '+(plan.assessment.verdict==='candidate'?'Kandidat screening awal':'Hanya untuk simulasi; perlu verifikasi');
- $('farm-content').hidden=false;$('crop-name').textContent=crop.name;
- const saved=read(key),match=saved?.version===1&&saved.landFingerprint===fingerprint&&saved.cropId===crop.id&&saved.planCreatedAt===plan.createdAt;
+ $('farm-content').hidden=false;$('crop-name').textContent=crop.name+' · '+(greenhouse?'Greenhouse':'Lahan terbuka');$('toggle-frame').hidden=!greenhouse;$('toggle-frame').addEventListener('click',()=>{if(viewer){$('toggle-frame').textContent=viewer.toggleFrame()?'Sembunyikan rangka':'Tampilkan rangka';}});
+ const saved=read(key),match=saved?.version===1&&saved.landFingerprint===fingerprint&&sameLandType(saved.landType,type)&&saved.cropId===crop.id&&saved.planCreatedAt===plan.createdAt;
  const sp=match&&Array.isArray(saved.spacing)&&saved.spacing.length===2&&saved.spacing.every(v=>Number.isFinite(v)&&v>=.1&&v<=20)?saved.spacing:crop.spacing;
  $('row-space').value=sp[0];$('plant-space').value=sp[1];const u=match?saved.usable:plan.input?.usable;$('usable').value=Number.isInteger(u)&&u>=1&&u<=100?u:80;
  $('layout-form').addEventListener('submit',e=>{e.preventDefault();generate();});

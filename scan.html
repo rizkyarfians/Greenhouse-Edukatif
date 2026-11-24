@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f3f6ef"><title>Automotion · Scan Lahan</title></head>
 <body>
-<header class="ls-header"><a href="./index.html">← Simulasi greenhouse</a><strong>AUTOMOTION <small>Land Scanner</small></strong><span>Guest</span></header>
+<header class="ls-header"><a href="./index.html">← Beranda</a><strong>AUTOMOTION <small>Land Scanner</small></strong><span>Guest</span></header>
 <main class="ls-shell">
 <section class="ls-intro"><p class="eyebrow">01 / LAND ASSESSMENT</p><h1>Ukur lahan Anda</h1><p>Datangi setiap patok batas lahan secara berurutan. Kamera membantu membidik; lokasi GPS diambil dari posisi HP, bukan objek di kejauhan.</p></section>
 <div class="ls-grid"><section class="ls-card">
-<h2>1. Tentukan patok</h2><div class="ls-camera"><video id="camera" autoplay muted playsinline hidden></video><div id="camera-placeholder">Kamera belum aktif</div><div class="ls-reticle" aria-hidden="true">＋</div><span id="camera-state">Kamera opsional</span></div>
+<h2>1. Tentukan patok</h2><label>Jenis budidaya<select id="land-type"><option value="open-field">Lahan terbuka</option><option value="greenhouse">Greenhouse</option></select></label><p class="ls-note">Untuk greenhouse, ukur area tapak yang tersedia.</p><div class="ls-camera"><video id="camera" autoplay muted playsinline hidden></video><div id="camera-placeholder">Kamera belum aktif</div><div class="ls-reticle" aria-hidden="true">＋</div><span id="camera-state">Kamera opsional</span></div>
 <div class="ls-actions"><button id="camera-toggle" type="button" class="secondary">Buka kamera</button><button id="gps-add" type="button">+ Tambah patok GPS</button></div>
 <p class="ls-note">Berdiri di dekat patok, tunggu sinyal stabil, lalu tekan Tambah patok GPS. Ulangi mengelilingi lahan; tidak perlu mengulang titik pertama.</p>
 <p id="status" role="status" aria-live="polite" class="ls-status"></p>
