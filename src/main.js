@@ -154,18 +154,18 @@ async function makeViewer() {
     frame = requestAnimationFrame(() => {
       frame = null;
       renderer.render(scene,camera);
+      positionZoneLabels();
     });
   }
   const camera = new THREE.OrthographicCamera(-10,10,10,-10,.1,200);
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.addEventListener('change',invalidate);
   let cameraFrame;
+  let switchTimer;
   let inCloseup = false;
+  let focusedZone;
+  let fruitLabelAnchor;
   let previousZoom = camera.zoom;
-  controls.addEventListener('start', () => {
-    cancelAnimationFrame(cameraFrame);
-    cameraFrame = undefined;
-  });
   controls.addEventListener('change', () => {
     const zoomedOut = camera.zoom < previousZoom;
     previousZoom = camera.zoom;
@@ -206,6 +206,28 @@ async function makeViewer() {
   const homeHeight = extent(homeUp);
   let overviewZoom = 1;
   const roof = model.getObjectByName('Roof');
+  const structuralGroups = [];
+  const frameMaterials = [];
+  model.traverse(object => {
+    if (object.name === 'Frame' || /^Row_[AB]\d{2}_Trellis$/.test(object.name)) structuralGroups.push(object);
+  });
+  for (const group of structuralGroups) {
+    group.traverse(object => {
+      if (!object.isMesh) return;
+      object.material = object.material.clone();
+      frameMaterials.push(object.material);
+    });
+  }
+  let frameOpacity = 1;
+  function setFrameOpacity(opacity) {
+    frameOpacity = opacity;
+    structuralGroups.forEach(group => group.visible = opacity > .025);
+    for (const material of frameMaterials) {
+      material.opacity = opacity;
+      material.transparent = opacity < 1;
+      material.depthWrite = opacity === 1;
+    }
+  }
   const walls = model.getObjectByName('WallScreens');
   roof.visible = false;
   walls.visible = false;
@@ -255,6 +277,28 @@ async function makeViewer() {
     model.add(area);
     areas[letter] = area;
   }
+  const zoneLabels = Object.entries(areas).map(([letter,area]) => {
+    const label = document.createElement('button');
+    label.type = 'button';
+    label.className = 'zone-label';
+    label.textContent = 'Zone ' + letter;
+    label.addEventListener('click', () => selectZone(letter));
+    holder.append(label);
+    return {letter,label,position:area.position.clone().setY(2.9)};
+  });
+  const labelPoint = new THREE.Vector3();
+  function positionZoneLabels() {
+    camera.updateMatrixWorld();
+    for (const {letter,label,position} of zoneLabels) {
+      labelPoint.copy(inCloseup && fruitLabelAnchor ? fruitLabelAnchor : position).project(camera);
+      label.hidden = Boolean(cameraFrame) || (inCloseup && letter !== focusedZone) ||
+        Math.abs(labelPoint.x) > .92 || Math.abs(labelPoint.y) > .9 || Math.abs(labelPoint.z) > 1;
+      label.disabled = watering;
+      label.setAttribute('aria-pressed', String(letter === zone));
+      label.style.left = (labelPoint.x+1)*50 + '%';
+      label.style.top = (1-labelPoint.y)*50 + '%';
+    }
+  }
   const animateWater = irrigationAnimation(holder,camera);
   animateWater(null);
   const pointer = new THREE.Vector2();
@@ -270,7 +314,7 @@ async function makeViewer() {
   canvasElement.addEventListener('pointerup', event => {
     const start = pointerStart;
     pointerStart = null;
-    if (!event.isPrimary || !start || Math.hypot(event.clientX-start[0],event.clientY-start[1]) > 5 || watering || roof.visible) return;
+    if (cameraFrame || switchTimer || !event.isPrimary || !start || Math.hypot(event.clientX-start[0],event.clientY-start[1]) > 5 || watering || roof.visible) return;
     const rect = canvasElement.getBoundingClientRect();
     pointer.set((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2);
     camera.updateMatrixWorld();
@@ -300,10 +344,19 @@ async function makeViewer() {
     invalidate();
   }
 
-  function goHome() {
+  function cancelCameraSequence() {
     cancelAnimationFrame(cameraFrame);
+    clearTimeout(switchTimer);
     cameraFrame = undefined;
+    switchTimer = undefined;
+  }
+
+  function goHome() {
+    cancelCameraSequence();
     inCloseup = false;
+    focusedZone = undefined;
+    controls.enabled = true;
+    setFrameOpacity(1);
     get('zone-card').hidden = true;
     camera.position.copy(homePosition);
     controls.target.copy(center);
@@ -313,15 +366,46 @@ async function makeViewer() {
     invalidate();
   }
 
+  function flyCamera(target,offset,targetZoom,endOpacity,duration,onComplete) {
+    const startTarget = controls.target.clone();
+    const startZoom = camera.zoom;
+    const startOpacity = frameOpacity;
+    const startOrbit = new THREE.Spherical().setFromVector3(camera.position.clone().sub(startTarget));
+    const endOrbit = new THREE.Spherical().setFromVector3(offset);
+    const turn = THREE.MathUtils.euclideanModulo(endOrbit.theta-startOrbit.theta+Math.PI,2*Math.PI)-Math.PI;
+    const orbit = new THREE.Spherical();
+    const viewOffset = new THREE.Vector3();
+    const started = performance.now();
+    controls.enabled = false;
+    function moveCamera(now) {
+      const t = reduceMotion.matches ? 1 : Math.min(1,(now-started)/duration);
+      const ease = t*t*(3-2*t);
+      controls.target.lerpVectors(startTarget,target,ease);
+      orbit.set(
+        THREE.MathUtils.lerp(startOrbit.radius,endOrbit.radius,ease),
+        THREE.MathUtils.lerp(startOrbit.phi,endOrbit.phi,ease),
+        startOrbit.theta + turn*ease,
+      );
+      camera.position.copy(controls.target).add(viewOffset.setFromSpherical(orbit));
+      camera.zoom = startZoom * (targetZoom/startZoom)**ease;
+      camera.updateProjectionMatrix();
+      setFrameOpacity(THREE.MathUtils.lerp(startOpacity,endOpacity,ease));
+      controls.update();
+      if (t < 1) cameraFrame = requestAnimationFrame(moveCamera);
+      else {
+        cameraFrame = undefined;
+        onComplete();
+      }
+      invalidate();
+    }
+    cameraFrame = requestAnimationFrame(moveCamera);
+  }
+
   function focusZone(selected) {
-    cancelAnimationFrame(cameraFrame);
     inCloseup = true;
     if (roof.visible) get('roof').click();
     get('zone-card-title').textContent = 'Zona ' + selected;
     get('zone-card').hidden = false;
-    const startTarget = controls.target.clone();
-    const startPosition = camera.position.clone();
-    const startZoom = camera.zoom;
     const innerRowX = selected === 'A' ? 3.25 : 4.75;
     const aisleSide = selected === 'A' ? 1 : -1;
     const plant = selected === 'A' ? 3 : 4;
@@ -344,32 +428,32 @@ async function makeViewer() {
     const up = new THREE.Vector3().crossVectors(offset, right).normalize();
     const focus = fruit.clone().addScaledVector(up, -.10);
     if (!mobile) focus.addScaledVector(right, .14);
-    const startOrbit = new THREE.Spherical().setFromVector3(startPosition.sub(startTarget));
-    const endOrbit = new THREE.Spherical().setFromVector3(offset);
-    const turn = THREE.MathUtils.euclideanModulo(endOrbit.theta - startOrbit.theta + Math.PI, 2 * Math.PI) - Math.PI;
+    fruitLabelAnchor = fruit.clone().add(new THREE.Vector3(0,.22,0));
     const viewHeight = mobile ? .99 : .87;
     const aspect = holder.clientWidth / holder.clientHeight;
     const targetZoom = 2 * Math.max(9.8, 10.3 / aspect) / viewHeight;
-    const orbit = new THREE.Spherical();
-    const viewOffset = new THREE.Vector3();
-    const started = performance.now();
-    function moveCamera(now) {
-      const t = reduceMotion.matches ? 1 : Math.min(1,(now-started)/760);
-      const ease = 1 - (1-t)**3;
-      controls.target.lerpVectors(startTarget,focus,ease);
-      orbit.set(
-        THREE.MathUtils.lerp(startOrbit.radius,endOrbit.radius,ease),
-        THREE.MathUtils.lerp(startOrbit.phi,endOrbit.phi,ease),
-        startOrbit.theta + turn * ease,
-      );
-      camera.position.copy(controls.target).add(viewOffset.setFromSpherical(orbit));
-      camera.zoom = startZoom * (targetZoom / startZoom) ** ease;
-      camera.updateProjectionMatrix();
-      controls.update();
-      invalidate();
-      cameraFrame = t < 1 ? requestAnimationFrame(moveCamera) : undefined;
+    flyCamera(focus,offset,targetZoom,0,760,() => {
+      controls.enabled = true;
+    });
+  }
+
+  function selectCameraZone(selected) {
+    const isSwitch = focusedZone && focusedZone !== selected;
+    const isWaiting = Boolean(switchTimer);
+    cancelCameraSequence();
+    focusedZone = selected;
+    if (!isSwitch && !isWaiting) {
+      focusZone(selected);
+      return;
     }
-    cameraFrame = requestAnimationFrame(moveCamera);
+    inCloseup = false;
+    get('zone-card').hidden = true;
+    flyCamera(center,homeDirection,overviewZoom,1,650,() => {
+      switchTimer = setTimeout(() => {
+        switchTimer = undefined;
+        focusZone(selected);
+      },1700);
+    });
   }
 
   holder.prepend(renderer.domElement);
@@ -384,10 +468,11 @@ async function makeViewer() {
     goHome,
     setZone(selected) {
       for (const [letter,area] of Object.entries(areas)) area.visible = letter === selected;
-      focusZone(selected);
+      selectCameraZone(selected);
       invalidate();
     },
     toggleRoof() {
+      if (!roof.visible && (inCloseup || switchTimer || cameraFrame)) goHome();
       roof.visible = !roof.visible;
       walls.visible = roof.visible;
       invalidate();
