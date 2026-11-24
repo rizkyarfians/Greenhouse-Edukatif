@@ -223,9 +223,15 @@ async function makeViewer() {
   const areas = {};
   const zoneWidth = 3.26;
   const zoneLength = 18.35;
-  const glowMaterials = [.095,.29,.135].map(opacity => new THREE.MeshBasicMaterial({
-    color:0xb9ffad, transparent:true, opacity, depthWrite:false, toneMapped:false,
+  const glowMaterials = [
+    {color:0x91f6a0, opacity:.17},
+    {color:0x5bf58a, opacity:.94},
+    {color:0x87ff9c, opacity:.34},
+  ].map(options => new THREE.MeshBasicMaterial({
+    ...options, transparent:true, depthWrite:false, toneMapped:false,
   }));
+  const edgeWidth = .10;
+  const haloWidth = .14;
   for (const [letter, rows] of Object.entries(rowsByZone)) {
     const area = new THREE.Group();
     area.rotation.x = -Math.PI / 2;
@@ -237,12 +243,14 @@ async function makeViewer() {
       mesh.position.set(x,y,0);
       area.add(mesh);
     }
-    strip(zoneWidth-.13,zoneLength-.13,0,0,glowMaterials[0]);
+    const innerWidth = zoneWidth - 2*edgeWidth;
+    const innerLength = zoneLength - 2*edgeWidth;
+    strip(innerWidth,innerLength,0,0,glowMaterials[0]);
     for (const side of [-1,1]) {
-      strip(.055,zoneLength-.02,side*(zoneWidth/2-.0375),0,glowMaterials[1]);
-      strip(zoneWidth-.13,.055,0,side*(zoneLength/2-.0375),glowMaterials[1]);
-      strip(.075,zoneLength+.13,side*(zoneWidth/2+.0275),0,glowMaterials[2]);
-      strip(zoneWidth-.02,.075,0,side*(zoneLength/2+.0275),glowMaterials[2]);
+      strip(edgeWidth,zoneLength,side*(zoneWidth-edgeWidth)/2,0,glowMaterials[1]);
+      strip(innerWidth,edgeWidth,0,side*(zoneLength-edgeWidth)/2,glowMaterials[1]);
+      strip(haloWidth,zoneLength+2*haloWidth,side*(zoneWidth+haloWidth)/2,0,glowMaterials[2]);
+      strip(zoneWidth,haloWidth,0,side*(zoneLength+haloWidth)/2,glowMaterials[2]);
     }
     model.add(area);
     areas[letter] = area;
