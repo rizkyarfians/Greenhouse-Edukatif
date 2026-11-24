@@ -160,9 +160,23 @@ async function makeViewer() {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.addEventListener('change',invalidate);
   let cameraFrame;
-  controls.addEventListener('start', () => cancelAnimationFrame(cameraFrame));
+  let inCloseup = false;
+  let previousZoom = camera.zoom;
+  controls.addEventListener('start', () => {
+    cancelAnimationFrame(cameraFrame);
+    cameraFrame = undefined;
+  });
+  controls.addEventListener('change', () => {
+    const zoomedOut = camera.zoom < previousZoom;
+    previousZoom = camera.zoom;
+    // Once the view is wider than a plant, leave the aisle and reframe the building.
+    if (inCloseup && !cameraFrame && zoomedOut && (camera.top-camera.bottom)/camera.zoom >= 2.5) {
+      goHome();
+    }
+  });
   controls.minZoom = .68;
   controls.maxZoom = 64;
+  controls.zoomSpeed = 1.6;
   controls.maxPolarAngle = Math.PI * .49;
   controls.touches.ONE = THREE.TOUCH.ROTATE;
   controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
@@ -182,8 +196,15 @@ async function makeViewer() {
   scene.add(model);
   const bounds = new THREE.Box3().setFromObject(model);
   const center = bounds.getCenter(new THREE.Vector3());
-  center.y -= 1.15;
-  const homePosition = center.clone().add(new THREE.Vector3(19,20,25));
+  const homeDirection = new THREE.Vector3(19,20,25);
+  const homePosition = center.clone().add(homeDirection);
+  const homeRight = new THREE.Vector3().crossVectors(camera.up,homeDirection).normalize();
+  const homeUp = new THREE.Vector3().crossVectors(homeDirection,homeRight).normalize();
+  const size = bounds.getSize(new THREE.Vector3());
+  const extent = axis => (Math.abs(axis.x)*size.x + Math.abs(axis.y)*size.y + Math.abs(axis.z)*size.z)/2;
+  const homeWidth = extent(homeRight);
+  const homeHeight = extent(homeUp);
+  let overviewZoom = 1;
   const roof = model.getObjectByName('Roof');
   const walls = model.getObjectByName('WallScreens');
   roof.visible = false;
@@ -200,13 +221,29 @@ async function makeViewer() {
     });
   }
   const areas = {};
-  const zoneGlow = new THREE.MeshBasicMaterial({color:0xf1ba4d, transparent:true, opacity:.57, depthWrite:false, toneMapped:false});
+  const zoneWidth = 3.26;
+  const zoneLength = 18.35;
+  const glowMaterials = [.095,.29,.135].map(opacity => new THREE.MeshBasicMaterial({
+    color:0xb9ffad, transparent:true, opacity, depthWrite:false, toneMapped:false,
+  }));
   for (const [letter, rows] of Object.entries(rowsByZone)) {
-    const area = new THREE.Mesh(new THREE.PlaneGeometry(3.26,18.35),zoneGlow);
-    area.name = 'ZoneHighlight_' + letter;
+    const area = new THREE.Group();
     area.rotation.x = -Math.PI / 2;
     area.position.set((rows[0] + rows.at(-1)) / 2,.037,-10);
     area.visible = letter === zone;
+    function strip(width,length,x,y,material) {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width,length),material);
+      mesh.name = 'ZoneHighlight_' + letter;
+      mesh.position.set(x,y,0);
+      area.add(mesh);
+    }
+    strip(zoneWidth-.13,zoneLength-.13,0,0,glowMaterials[0]);
+    for (const side of [-1,1]) {
+      strip(.055,zoneLength-.02,side*(zoneWidth/2-.0375),0,glowMaterials[1]);
+      strip(zoneWidth-.13,.055,0,side*(zoneLength/2-.0375),glowMaterials[1]);
+      strip(.075,zoneLength+.13,side*(zoneWidth/2+.0275),0,glowMaterials[2]);
+      strip(zoneWidth-.02,.075,0,side*(zoneLength/2+.0275),glowMaterials[2]);
+    }
     model.add(area);
     areas[letter] = area;
   }
@@ -247,6 +284,9 @@ async function makeViewer() {
     camera.right = halfHeight * ratio;
     camera.top = halfHeight;
     camera.bottom = -halfHeight;
+    const oldOverviewZoom = overviewZoom;
+    overviewZoom = .89 * Math.min(camera.right/homeWidth,camera.top/homeHeight);
+    if (!inCloseup && camera.zoom === oldOverviewZoom) camera.zoom = overviewZoom;
     camera.updateProjectionMatrix();
     renderer.setSize(width,height,false);
     invalidate();
@@ -254,10 +294,12 @@ async function makeViewer() {
 
   function goHome() {
     cancelAnimationFrame(cameraFrame);
+    cameraFrame = undefined;
+    inCloseup = false;
     get('zone-card').hidden = true;
     camera.position.copy(homePosition);
     controls.target.copy(center);
-    camera.zoom = 1;
+    camera.zoom = overviewZoom;
     camera.updateProjectionMatrix();
     controls.update();
     invalidate();
@@ -265,6 +307,7 @@ async function makeViewer() {
 
   function focusZone(selected) {
     cancelAnimationFrame(cameraFrame);
+    inCloseup = true;
     if (roof.visible) get('roof').click();
     get('zone-card-title').textContent = 'Zona ' + selected;
     get('zone-card').hidden = false;
@@ -316,7 +359,7 @@ async function makeViewer() {
       camera.updateProjectionMatrix();
       controls.update();
       invalidate();
-      if (t < 1) cameraFrame = requestAnimationFrame(moveCamera);
+      cameraFrame = t < 1 ? requestAnimationFrame(moveCamera) : undefined;
     }
     cameraFrame = requestAnimationFrame(moveCamera);
   }
@@ -324,8 +367,8 @@ async function makeViewer() {
   holder.prepend(renderer.domElement);
   renderer.domElement.setAttribute('aria-label','Model 3D greenhouse melon');
   holder.querySelector('.fallback').hidden = true;
-  goHome();
   resize();
+  goHome();
   new ResizeObserver(resize).observe(holder);
 
 
