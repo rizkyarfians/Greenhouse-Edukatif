@@ -38,3 +38,19 @@ Mode greenhouse melon dan lahan terbuka padi dari feature/guest-simulation dipul
 ## Jenis lahan lintas modul
 
 Beranda menyediakan simulasi langsung greenhouse melon dan sawah padi, serta dua jalur scan. Profil scan menyimpan landType; profil lama dianggap open-field. Climate adalah iklim luar bangunan. Screening greenhouse berbasis tanah memakai suhu indoor yang diinput pengguna (tidak otomatis memakai suhu outdoor), lima kandidat awal termasuk melon; screening outdoor tetap 10 komoditas. Farm planner menampilkan garis rangka konseptual untuk greenhouse dan memvalidasi jenis profil/rencana. Belum mencakup hidroponik, desain struktur/atap, atau pengukuran kondisi indoor. Tes tambahan: node --test tests/land-type.test.js.
+
+## Simpan simulasi sebagai tamu
+
+Di beranda, beri nama sesi lalu pilih **Mulai simulasi**. Gunakan **Simpan simulasi** untuk menyimpan zona, pembacaan sensor, level tandon, kelembapan tiap zona, dan tampilan atap. Buka kembali sesi dari **Simulasi tersimpan**. Pompa mulai dalam keadaan mati saat sesi dibuka.
+
+Simpanan disimpan di penyimpanan lokal browser untuk alamat situs yang sama. Mode ini belum menggunakan akun atau sinkronisasi antardevice.
+
+## Jenis lahan
+
+Pilih **Greenhouse Melon** untuk mencoba irigasi tetes di Zona A dan B, atau **Lahan Terbuka Padi** untuk melihat satu petak sawah dengan tanah, bibit padi, pematang, dan saluran air dalam 3D. Di sawah, tombol **Alirkan air** dan **Kuras air** mengubah genangan. Kelembapan tanah naik saat pengisian. Nilai pengairan adalah data simulasi, dengan tinggi air diperbesar pada model 3D. Viewer WebGL memakai `public/lahan-terbuka-padi.glb`. Tampilan sederhana tersedia jika perangkat tidak mendukung WebGL atau aset gagal dimuat.
+
+Simpanan menyimpan jenis lahan dan kondisi terakhir. Simpanan dari versi sebelumnya tetap dibuka sebagai Greenhouse Melon. Saat membuka simpanan sawah, pintu air mulai dalam keadaan tertutup.
+
+## Workflow pengembangan
+
+Untuk sementara main adalah satu-satunya branch pengembangan aktif. Semua fitur dan aset digabungkan di main; branch lama dipertahankan sebagai arsip. Clone atau pull origin main untuk mendapatkan versi lengkap.
