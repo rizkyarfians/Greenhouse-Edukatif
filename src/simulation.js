@@ -1,3 +1,4 @@
+import {addDeviceMarkers, refreshDeviceDetails, showDeviceDetails} from './device-details.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -27,7 +28,7 @@ const metrics = [
 get('metrics').innerHTML = metrics.map(({key,title,unit,note,tone,icon}) => `
   <article class="metric ${tone}"><span class="tile-icon" data-icon="${icon}"></span>
     <h3>${title}</h3><p class="metric-value"><span id="${key}-value"></span><small>${unit}</small></p>
-    <p class="metric-note">${note}</p>${unit === '%' ? `<div class="bar" aria-hidden="true"><span id="${key}-bar"></span></div>` : ''}
+    <p class="metric-note">${note}</p><button class="device-trigger" data-metric="${key}" type="button" aria-label="Detail sensor ${title}" aria-haspopup="dialog"></button>${unit === '%' ? `<div class="bar" aria-hidden="true"><span id="${key}-bar"></span></div>` : ''}
   </article>`).join('');
 for (const element of document.querySelectorAll('#greenhouse-dashboard [data-icon]')) {
   element.innerHTML = icons[element.dataset.icon];
@@ -52,6 +53,23 @@ let completedZone;
 const cycleDuration = 7500;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
+const devices = Object.fromEntries(metrics.map(({key,title,unit,note}) => [key,{
+  type:'sensor',
+  title,
+  description:note + '.',
+  reading:() => `${key === 'media' ? 'Zona ' + zone + ' · ' : ''}${readings[key]} ${unit}`,
+}]));
+const pumpDevice = {
+  type:'actuator', title:'Pompa air',
+  description:'Pompa mengalirkan air ke zona yang dipilih.',
+  reading:() => watering ? 'Menyala · Zona ' + zone : 'Mati',
+  controls:[get('water')],
+};
+for (const trigger of document.querySelectorAll('[data-metric]')) {
+  trigger.addEventListener('click', () => showDeviceDetails(devices[trigger.dataset.metric]));
+}
+get('pump-details').addEventListener('click', () => showDeviceDetails(pumpDevice));
+
 function updateReadings() {
   readings.media = zoneMedia[zone];
   for (const [key, value] of Object.entries(readings)) {
@@ -60,6 +78,7 @@ function updateReadings() {
     const bar = get(key + '-bar');
     if (bar) bar.style.width = value + '%';
   }
+  refreshDeviceDetails();
 }
 
 function updateFocusStatus() {
@@ -83,6 +102,7 @@ function updatePump() {
   zoneInputs.forEach(input => input.disabled = watering);
   viewer?.setWatering(watering ? zone : null);
   updateFocusStatus();
+  refreshDeviceDetails();
 }
 
 function stopWatering(completed = false) {
@@ -206,6 +226,7 @@ async function makeViewer() {
       frame = null;
       renderer.render(scene,camera);
       positionZoneLabels();
+      positionDeviceMarkers(camera, Boolean(cameraFrame));
     });
   }
   const camera = new THREE.OrthographicCamera(-10,10,10,-10,.1,200);
@@ -350,6 +371,25 @@ async function makeViewer() {
       label.style.top = (1-labelPoint.y)*50 + '%';
     }
   }
+  const deviceNodes = [
+    ['Climate_Front_Sensor','temperature','thermometer'],
+    ['Climate_Rear_Sensor','humidity','humidity'],
+    ['Moisture_A_Sensor','media','soil','A'],
+    ['Moisture_B_Sensor','media','soil','B'],
+    ['Level_Raw_Sensor','water','tank'],
+    ['Level_Mix_Sensor','nutrient','food'],
+    ['Pump','pump','pump'],
+  ];
+  const markers = deviceNodes.flatMap(([name,key,icon,letter]) => {
+    const node = model.getObjectByName(name);
+    if (!node) return [];
+    const position = new THREE.Box3().setFromObject(node).getCenter(new THREE.Vector3());
+    position.y += .35;
+    const device = letter ? {...devices.media, title:'Kelembapan media · Zona ' + letter,
+      reading:() => zoneMedia[letter] + ' %'} : key === 'pump' ? pumpDevice : devices[key];
+    return [{position, icon:icons[icon], device}];
+  });
+  const positionDeviceMarkers = addDeviceMarkers(holder,markers);
   const animateWater = irrigationAnimation(holder,camera);
   animateWater(null);
   const pointer = new THREE.Vector2();

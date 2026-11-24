@@ -60,3 +60,22 @@
 .rice-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
 .rice-note{margin-top:10px;font-size:12px;color:var(--muted)}
 @media(max-width:540px){.land-options{grid-template-columns:1fr}}
+
+.metric:has(>.device-trigger),.pump-head:has(>.device-trigger){position:relative}
+.device-trigger{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:10px;background:transparent;color:inherit}
+.device-trigger::after{content:"↗";position:absolute;top:5px;right:8px;font-size:14px;font-weight:700}
+.pump-head .device-trigger::after{top:auto;bottom:-6px;right:0}
+.device-trigger:hover{outline:1px solid currentColor;outline-offset:2px}
+.device-trigger:focus-visible{outline:3px solid #3889b3;outline-offset:2px}
+.device-marker{position:absolute;z-index:1;transform:translate(-50%,-50%);width:34px;height:34px;padding:0;border:2px solid white;border-radius:50%;background:#236348;color:white;box-shadow:0 1px 6px #182e2980;display:grid;place-items:center}
+.device-marker[data-device-type=actuator]{background:#305b85}
+.device-marker svg{width:16px;height:16px}
+.device-marker:hover,.device-marker:focus-visible{z-index:2;box-shadow:0 0 0 2px #255d83}
+.device-marker[hidden]{display:none}
+.device-dialog{width:min(420px,calc(100% - 32px));padding:22px;color:var(--text,#203a2e)}
+.device-dialog::backdrop{background:#142b2290}
+.device-dialog form{float:right;margin:0 0 8px 10px}
+.device-detail-type{color:var(--muted);font-size:13px;font-weight:700}
+.device-detail-value{margin-top:8px;font-size:26px;font-weight:800}
+#device-details-description{margin-top:6px;color:var(--muted)}
+.device-detail-actions:not(:empty){display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}

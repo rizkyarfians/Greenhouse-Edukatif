@@ -6,6 +6,10 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {canvasRenderer} from './canvas-renderer.js';
 import {createRiceFieldModel, maxWaterDepth} from './rice-field-model.js';
+import {addDeviceMarkers, refreshDeviceDetails, showDeviceDetails} from './device-details.js';
+import soilIcon from 'lucide-static/icons/flower-2.svg?raw';
+import waterIcon from 'lucide-static/icons/droplets.svg?raw';
+import gateIcon from 'lucide-static/icons/activity.svg?raw';
 
 const get = id => document.getElementById(id);
 const viewport = get('rice-viewport');
@@ -18,6 +22,26 @@ let viewerLoading;
 let irrigation;
 let timer;
 
+const soilDevice = {
+  type:'sensor', title:'Kelembapan tanah',
+  description:'Menunjukkan kadar air tanah di petak sawah pada simulasi.',
+  reading:() => state.soilMoisture + ' %',
+};
+const waterDevice = {
+  type:'sensor', title:'Tinggi genangan',
+  description:'Menunjukkan kedalaman air di atas permukaan tanah.',
+  reading:() => state.waterDepth + ' cm',
+};
+const gateDevice = {
+  type:'actuator', title:'Pintu air',
+  description:'Buka saluran untuk mengisi atau menguras petak sawah.',
+  reading:() => get('rice-irrigation-status').textContent,
+  controls:[fill,drain],
+};
+get('rice-soil-details').addEventListener('click', () => showDeviceDetails(soilDevice));
+get('rice-depth-details').addEventListener('click', () => showDeviceDetails(waterDevice));
+get('rice-gate-details').addEventListener('click', () => showDeviceDetails(gateDevice));
+
 function renderState() {
   get('rice-water-depth').textContent = state.waterDepth;
   get('rice-soil-moisture').textContent = state.soilMoisture;
@@ -28,6 +52,7 @@ function renderState() {
   fill.disabled = irrigation === 'drain' || state.waterDepth >= maxWaterDepth;
   drain.disabled = irrigation === 'fill' || state.waterDepth <= 0;
   viewer?.showIrrigation(state.waterDepth,irrigation);
+  refreshDeviceDetails();
 }
 
 function stopIrrigation() {
@@ -98,9 +123,12 @@ async function loadRiceModel() {
   }
   const closedGateHeight = gate.position.y;
   const soilHeight = new Box3().setFromObject(soil).max.y;
+  const gatePosition = new Box3().setFromObject(gate).getCenter(new Vector3());
+  gatePosition.y += .4;
 
   return {
     model,
+    gatePosition,
     setIrrigation(depth,active) {
       gate.position.y = closedGateHeight + (active ? .32 : 0);
       flood.visible = depth > 0;
@@ -134,6 +162,11 @@ async function makeViewer() {
 
   const camera = new OrthographicCamera(-14,14,14,-14,.1,120);
   const controls = new OrbitControls(camera,canvas);
+  const positionDeviceMarkers = addDeviceMarkers(viewport,[
+    {device:soilDevice, icon:soilIcon, position:new Vector3(-3.1,.55,2)},
+    {device:waterDevice, icon:waterIcon, position:new Vector3(1.6,.55,-2.2)},
+    {device:gateDevice, icon:gateIcon, position:riceModel?.gatePosition ?? new Vector3(6.23,.95,6.12)},
+  ]);
   controls.enablePan = false;
   controls.minZoom = 1;
   controls.maxZoom = 3.5;
@@ -144,7 +177,10 @@ async function makeViewer() {
     if (frame || !viewport.clientWidth) return;
     frame = requestAnimationFrame(() => {
       frame = undefined;
-      if (viewport.clientWidth) renderer.render(scene,camera);
+      if (viewport.clientWidth) {
+        renderer.render(scene,camera);
+        positionDeviceMarkers(camera);
+      }
     });
   }
   controls.addEventListener('change',draw);

@@ -93,7 +93,7 @@
       <div class="readings-head"><h2 id="sensor-title">Kondisi kebun</h2><span data-icon="activity"></span></div>
       <div class="metrics" id="metrics"></div>
       <section class="pump panel">
-        <div class="pump-head"><span class="tile-icon mint" data-icon="pump"></span><div><h3>Pompa air</h3><p id="pump-description">Menunggu penyiraman</p></div><span class="pump-state" id="pump-state" role="status">Mati</span></div>
+        <div class="pump-head"><span class="tile-icon mint" data-icon="pump"></span><div><h3>Pompa air</h3><p id="pump-description">Menunggu penyiraman</p></div><span class="pump-state" id="pump-state" role="status">Mati</span><button class="device-trigger" id="pump-details" type="button" aria-label="Detail pompa air" aria-haspopup="dialog"></button></div>
         <fieldset class="zones"><legend>Pilih zona yang mau disiram</legend><div>
           <label><input type="radio" name="zone" value="A" checked><span>Zona A</span></label>
           <label><input type="radio" name="zone" value="B"><span>Zona B</span></label>
@@ -114,11 +114,11 @@
     <aside class="readings" aria-labelledby="rice-readings-title">
       <div class="readings-head"><h2 id="rice-readings-title">Kondisi petak sawah</h2></div>
       <div class="metrics">
-        <article class="metric soil"><h3>Kelembapan tanah</h3><p class="metric-value"><span id="rice-soil-moisture"></span><small>%</small></p></article>
-        <article class="metric water"><h3>Genangan air</h3><p class="metric-value"><span id="rice-water-depth"></span><small>cm</small></p></article>
+        <article class="metric soil"><h3>Kelembapan tanah</h3><p class="metric-value"><span id="rice-soil-moisture"></span><small>%</small></p><button class="device-trigger" id="rice-soil-details" type="button" aria-label="Detail sensor kelembapan tanah" aria-haspopup="dialog"></button></article>
+        <article class="metric water"><h3>Genangan air</h3><p class="metric-value"><span id="rice-water-depth"></span><small>cm</small></p><button class="device-trigger" id="rice-depth-details" type="button" aria-label="Detail sensor tinggi genangan" aria-haspopup="dialog"></button></article>
       </div>
       <section class="pump panel" aria-labelledby="rice-irrigation-title">
-        <div class="pump-head"><div><h3 id="rice-irrigation-title">Pengairan sawah</h3><p id="rice-irrigation-status" role="status">Pintu air tertutup</p></div></div>
+        <div class="pump-head"><div><h3 id="rice-irrigation-title">Pengairan sawah</h3><p id="rice-irrigation-status" role="status">Pintu air tertutup</p></div><button class="device-trigger" id="rice-gate-details" type="button" aria-label="Detail pintu air" aria-haspopup="dialog"></button></div>
         <div class="rice-actions">
           <button type="button" class="primary-button" id="rice-fill" disabled>Alirkan air</button>
           <button type="button" class="secondary-button" id="rice-drain" disabled>Kuras air</button>
@@ -129,6 +129,14 @@
   </div>
   </section>
 </main>
+<dialog id="device-details" class="device-dialog panel" aria-labelledby="device-details-title">
+  <form method="dialog"><button class="secondary-button" type="submit" autofocus>Tutup</button></form>
+  <p id="device-details-type" class="device-detail-type"></p>
+  <h2 id="device-details-title"></h2>
+  <p id="device-details-value" class="device-detail-value" aria-live="polite"></p>
+  <p id="device-details-description"></p>
+  <div id="device-details-actions" class="device-detail-actions"></div>
+</dialog>
 <script type="module" src="/src/main.js"></script>
 </body>
 </html>
