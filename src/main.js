@@ -1,7 +1,6 @@
 import './style.css';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
 import greenhouseIcon from 'lucide-static/icons/house.svg?raw';
-import riceIcon from 'lucide-static/icons/wheat.svg?raw';
 
 const get = id => document.getElementById(id);
 const home = get('guest-home');
@@ -38,7 +37,7 @@ let lastSavedState;
 document.querySelector('.brand-icon').innerHTML = sprout;
 document.querySelector('.brand-icon').setAttribute('aria-hidden', 'true');
 document.querySelector('[data-land-icon=greenhouse]').innerHTML = greenhouseIcon;
-document.querySelector('[data-land-icon=rice]').innerHTML = riceIcon;
+document.querySelector('[data-land-icon=rice]').innerHTML = sprout;
 
 function selectedLandType() {
   return landInputs.find(input => input.checked).value;
