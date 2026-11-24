@@ -1,7 +1,8 @@
 import {
-  ACESFilmicToneMapping, DirectionalLight, HemisphereLight, OrthographicCamera,
+  ACESFilmicToneMapping, Box3, DirectionalLight, HemisphereLight, OrthographicCamera,
   Scene, Vector3, WebGLRenderer,
 } from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {canvasRenderer} from './canvas-renderer.js';
 import {createRiceFieldModel, maxWaterDepth} from './rice-field-model.js';
@@ -13,6 +14,7 @@ const drain = get('rice-drain');
 const defaultState = {waterDepth:0, soilMoisture:42};
 let state = {...defaultState};
 let viewer;
+let viewerLoading;
 let irrigation;
 let timer;
 
@@ -58,16 +60,22 @@ drain.addEventListener('click',() => changeIrrigation('drain'));
 
 export function openSimulation(saved) {
   state = {...(saved ?? defaultState)};
-  if (!viewer) {
-    try {
-      viewer = makeViewer();
-    } catch (error) {
-      console.error('Model sawah tidak dapat ditampilkan',error);
-      get('rice-scene-status').querySelector('span').textContent = 'Tampilan 3D tidak tersedia';
-    }
-  }
-  viewer?.reset();
   stopIrrigation();
+  if (viewer) viewer.reset();
+  else viewerLoading ??= initializeViewer();
+}
+
+async function initializeViewer() {
+  try {
+    viewer = await makeViewer();
+    viewer.reset();
+    renderState();
+  } catch (error) {
+    console.error('Model sawah tidak dapat ditampilkan',error);
+    get('rice-scene-status').querySelector('span').textContent = 'Tampilan 3D tidak tersedia';
+  } finally {
+    viewerLoading = undefined;
+  }
 }
 
 export function snapshotSimulation() {
@@ -78,7 +86,30 @@ export function pauseSimulation() {
   stopIrrigation();
 }
 
-function makeViewer() {
+async function loadRiceModel() {
+  const modelUrl = new URL('lahan-terbuka-padi.glb',document.baseURI);
+  const {scene:model} = await new GLTFLoader().loadAsync(modelUrl.href);
+  const gate = model.getObjectByName('Pintu_Air');
+  const flood = model.getObjectByName('Genangan');
+  const soil = model.getObjectByName('Permukaan_Tanah');
+  const maxHeight = flood?.userData.tinggi_tampil_m;
+  if (!gate || !flood || !soil || !Number.isFinite(maxHeight)) {
+    throw new Error('GLB sawah tidak memiliki bagian irigasi yang dibutuhkan.');
+  }
+  const closedGateHeight = gate.position.y;
+  const soilHeight = new Box3().setFromObject(soil).max.y;
+
+  return {
+    model,
+    setIrrigation(depth,active) {
+      gate.position.y = closedGateHeight + (active ? .32 : 0);
+      flood.visible = depth > 0;
+      flood.position.y = soilHeight + (maxHeight-soilHeight)*depth/maxWaterDepth;
+    },
+  };
+}
+
+async function makeViewer() {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('webgl2',{alpha:true,antialias:true});
   const renderer = context ? new WebGLRenderer({canvas,context,alpha:true,antialias:true}) : canvasRenderer(canvas);
@@ -86,10 +117,18 @@ function makeViewer() {
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));
     renderer.toneMapping = ACESFilmicToneMapping;
   }
+  let riceModel;
+  if (context) {
+    try {
+      riceModel = await loadRiceModel();
+    } catch (error) {
+      console.warn('GLB sawah gagal dimuat. Memakai model sederhana.',error);
+    }
+  }
+  const {model,setIrrigation} = riceModel ?? createRiceFieldModel();
   const scene = new Scene();
-  const {model,setIrrigation} = createRiceFieldModel();
-  scene.add(model,new HemisphereLight(0xfffce1,0xb2936b,2.15));
-  const sun = new DirectionalLight(0xffeac2,2.25);
+  scene.add(model,new HemisphereLight(0xfff9ea,0xbda688,2.2));
+  const sun = new DirectionalLight(0xfff0d7,2.35);
   sun.position.set(5,11,8);
   scene.add(sun);
 
@@ -114,7 +153,7 @@ function makeViewer() {
     const {clientWidth:width,clientHeight:height} = viewport;
     if (!width || !height) return;
     const aspect = width / height;
-    const halfHeight = Math.max(12.6,15 / aspect);
+    const halfHeight = Math.max(11.2,13.2 / aspect);
     camera.top = halfHeight;
     camera.bottom = -halfHeight;
     camera.left = -halfHeight * aspect;
@@ -125,7 +164,7 @@ function makeViewer() {
   }
 
   function reset() {
-    camera.position.copy(new Vector3(16,20,26));
+    camera.position.copy(new Vector3(23,26,28));
     camera.zoom = 1;
     controls.target.set(0,0,0);
     controls.update();
@@ -137,7 +176,7 @@ function makeViewer() {
   new ResizeObserver(resize).observe(viewport);
   get('rice-reset').disabled = false;
   get('rice-reset').addEventListener('click',reset);
-  get('rice-scene-status').querySelector('span').textContent = 'Petak sawah';
+  get('rice-scene-status').querySelector('span').textContent = riceModel ? 'Petak sawah' : 'Petak sawah · tampilan sederhana';
   return {
     reset,
     showIrrigation(depth,active) {

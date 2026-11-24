@@ -21,6 +21,6 @@ Simpanan disimpan di penyimpanan lokal browser untuk alamat situs yang sama. Mod
 
 ## Jenis lahan
 
-Pilih **Greenhouse Melon** untuk mencoba irigasi tetes di Zona A dan B, atau **Lahan Terbuka Padi** untuk melihat satu petak sawah dengan tanah, bibit padi, pematang, dan saluran air dalam 3D. Di sawah, tombol **Alirkan air** dan **Kuras air** mengubah genangan. Kelembapan tanah naik saat pengisian. Nilai pengairan adalah data simulasi, dengan tinggi air diperbesar pada model 3D.
+Pilih **Greenhouse Melon** untuk mencoba irigasi tetes di Zona A dan B, atau **Lahan Terbuka Padi** untuk melihat satu petak sawah dengan tanah, bibit padi, pematang, dan saluran air dalam 3D. Di sawah, tombol **Alirkan air** dan **Kuras air** mengubah genangan. Kelembapan tanah naik saat pengisian. Nilai pengairan adalah data simulasi, dengan tinggi air diperbesar pada model 3D. Viewer WebGL memakai `public/lahan-terbuka-padi.glb`. Tampilan sederhana tersedia jika perangkat tidak mendukung WebGL atau aset gagal dimuat.
 
 Simpanan menyimpan jenis lahan dan kondisi terakhir. Simpanan dari versi sebelumnya tetap dibuka sebagai Greenhouse Melon. Saat membuka simpanan sawah, pintu air mulai dalam keadaan tertutup.
