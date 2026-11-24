@@ -30,3 +30,7 @@ Dari halaman iklim, buka rekomendasi tanaman. Isi kondisi air, tekstur, drainase
 ## Dynamic Farm — Cycle 4
 
 Simpan rencana tanaman dari Cycle 3 lalu buka rencana 3D. Terrain datar dibentuk dari polygon (termasuk cekung), baris tanam dipotong pada batas dan kapasitas dibatasi target area efektif. Sampel visual maksimal 3.000 instans; kapasitas grid tidak sama dengan objek visual. Persentase efektif belum membentuk bedengan/jalan. Zona berdasarkan sumbu timur–barat; luas tidak selalu sama. Sepuluh crop menggunakan model geometri prosedural ilustratif, bukan aset botani realistis. Marker sensor tanah, cuaca, katup, pompa, tandon dapat diklik; aliran air dan kelembapan hanya simulasi. Tidak ada hardware control atau rancangan hidraulik. WebGL gagal → sketsa 2D dan panel masih bisa digunakan. Layout disimpan lokal untuk polygon, komoditas dan waktu rencana yang sama. Tes: node --test tests/land-geometry.test.js tests/climate-core.test.js tests/recommendation-core.test.js tests/farm-layout.test.js.
+
+## Beranda simulasi guest
+
+Mode greenhouse melon dan lahan terbuka padi dari feature/guest-simulation dipulihkan ke main, termasuk aset GLB padi, penyimpanan guest dan detail perangkat. Simulasi langsung tidak membutuhkan scan. Fitur scan, iklim, rekomendasi dan farm planner tetap terpisah.
