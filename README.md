@@ -12,3 +12,9 @@ npm run dev
 `npm run build` menghasilkan situs statis di `dist/`. Paket unduhan juga menyertakan hasil build. Untuk membuka hasil build secara lokal, jalankan server HTTP dari direktori proyek, misalnya `python3 -m http.server 8000 --directory dist`, lalu buka http://localhost:8000. Model GLB ada di `public/greenhouse.glb`.
 
 Viewer menggunakan WebGL jika tersedia. Jika perangkat tidak menyediakan WebGL, viewer memakai renderer Canvas dengan warna dan geometri yang disederhanakan.
+
+## Simpan simulasi sebagai tamu
+
+Di beranda, beri nama sesi lalu pilih **Mulai simulasi**. Gunakan **Simpan simulasi** untuk menyimpan zona, pembacaan sensor, level tandon, kelembapan tiap zona, dan tampilan atap. Buka kembali sesi dari **Simulasi tersimpan**. Pompa mulai dalam keadaan mati saat sesi dibuka.
+
+Simpanan disimpan di penyimpanan lokal browser untuk alamat situs yang sama. Mode ini belum menggunakan akun atau sinkronisasi antardevice.

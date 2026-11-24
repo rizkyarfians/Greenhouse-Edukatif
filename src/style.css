@@ -11,3 +11,38 @@
 .zone-card{position:absolute;z-index:2;right:14px;top:14px;width:min(225px,43%);border:1px solid #dae1d5;border-radius:15px;background:#fffffff5;padding:11px 12px;box-shadow:0 6px 20px #203a2e1c}.zone-card[hidden]{display:none}.zone-card-head{display:flex;justify-content:space-between;align-items:start;gap:6px;padding-bottom:6px}.zone-card-head h3{font-size:20px;line-height:1.2}.zone-card-head p{font-size:12px;color:var(--muted)}#close-focus{color:#385a4a;background:#edf4eb;border:0;border-radius:8px;width:28px;height:28px;font-size:20px;line-height:1}.zone-stats{margin:0;border-top:1px solid var(--border);padding-top:4px;display:grid;gap:3px}.zone-stats>div,.zone-status{display:flex;justify-content:space-between;gap:5px}.zone-stats dt{font-size:12px;color:#52675a}.zone-stats dd{font-weight:800;font-size:12px;white-space:nowrap;margin:0}.zone-simulation{margin-top:8px;padding:7px;background:#eef5ed;border-radius:9px}.zone-status{align-items:center;flex-wrap:wrap}.zone-status strong,.zone-status span{font-size:12px}.zone-status span,.zone-simulation p{color:#476454}.zone-simulation p{font-size:11px;line-height:1.35;margin-top:3px}.zone-simulation progress{width:100%;height:6px;accent-color:#258bb2;vertical-align:middle}
 @media(max-width:680px){.viewport:has(.zone-card:not([hidden])){height:485px}.zone-card{top:auto;bottom:52px;width:min(260px,calc(100% - 28px));padding:7px 9px}.zone-stats{grid-template-columns:1fr 1fr;gap:2px 8px}.zone-stats dt,.zone-stats dd{font-size:11px}.zone-card-head h3{font-size:16px}.zone-simulation{margin-top:5px}}
 .zone-label{position:absolute;z-index:1;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #b7cbb7;border-radius:7px;background:#f9fcf5;color:#385841;font-size:12px;font-weight:800;line-height:1.2;white-space:nowrap;box-shadow:0 2px 8px #1b472521}.zone-label[aria-pressed=true]{color:#164629;background:#e4fbdc;border-color:#79bd80}.zone-label[hidden]{display:none}
+
+.guest-home{max-width:1160px;margin:auto;padding:clamp(24px,5vw,64px) 0}
+.home-hero{display:grid;grid-template-columns:1fr 1fr;align-items:center;overflow:hidden;background:#fafff7}
+.home-copy{padding:clamp(22px,4.4vw,62px)}
+.home-copy>p{max-width:38ch;margin-top:14px;color:var(--muted)}
+.home-preview{display:block;width:100%;height:100%;min-height:230px;max-height:420px;object-fit:contain;background:#eaf2e2;mix-blend-mode:multiply}
+.start-simulation{margin-top:26px;font-size:14px}
+.start-simulation label{display:block;margin-bottom:6px;font-weight:700}
+.start-controls{display:flex;flex-wrap:wrap;gap:8px}
+.start-controls input{min-width:0;flex:1 1 140px;padding:8px 12px;border:1px solid #b8cbb9;border-radius:10px;background:white;font:inherit;color:inherit}
+.start-controls input:focus-visible{outline:3px solid #3889b3;outline-offset:2px}
+.primary-button,.secondary-button{padding:9px 15px;border-radius:10px;min-height:42px;font-size:14px;font-weight:800;white-space:nowrap}
+.primary-button{border:1px solid var(--green);background:var(--green);color:white}
+.primary-button:hover:enabled{background:#194c37}
+.secondary-button{border:1px solid #c8ddcb;background:#eef6ee;color:var(--green)}
+.secondary-button:hover{background:#e0eddf}
+.saved-projects{margin-top:32px}
+.saved-projects>p{color:var(--muted);margin-top:4px}
+.saved-projects>.home-message:not(:empty){margin-top:14px;padding:13px 16px;border:1px dashed #b8cbb9;border-radius:12px}
+.saved-list{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:9px}
+.saved-project{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-radius:13px}
+.saved-project h3{font-size:16px;overflow-wrap:anywhere}
+.saved-project p,#save-message{font-size:13px;color:var(--muted)}
+.simulation-intro{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.simulation-intro h1{overflow-wrap:anywhere}
+.back-home{border:0;padding:1px 0;margin-bottom:8px;background:none;color:var(--green);font-size:14px;font-weight:800}
+.back-home:hover{text-decoration:underline}
+.save-controls{flex-shrink:0;max-width:215px;text-align:right}
+#save-message:not(:empty){margin-top:5px}
+@media(max-width:680px){
+  .home-hero{grid-template-columns:1fr}
+  .home-preview{height:205px;min-height:0}
+  .simulation-intro{align-items:flex-start;flex-direction:column}
+  .save-controls{text-align:left}
+}
