@@ -147,3 +147,14 @@
   .ls-camera-status { grid-column: 1 / -1; }
   .ls-camera-actions { justify-self: end; }
 }
+
+.ls-camera-saved-stake {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: #182b23ec;
+  color: #d4ffa6;
+  font-size: 13px;
+  font-weight: 700;
+}

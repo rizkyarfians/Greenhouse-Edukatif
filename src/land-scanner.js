@@ -12,6 +12,7 @@ const cameraOverlay = createCameraOverlay({
   overlay: $('camera-overlay'),
   markers: $('camera-markers'),
   message: $('camera-direction'),
+  savedStake: $('camera-saved-stake'),
   camera: $('camera'),
   getPoints: () => points,
 });
@@ -130,7 +131,7 @@ $('gps-add').addEventListener('click',()=>{
   if(request!==positionRequest)return;locating=false;
   const {latitude:lat,longitude:lon,accuracy}=pos.coords;
   if(Date.now()-pos.timestamp>30000||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180){status('Lokasi tidak valid atau terlalu lama. Coba lagi.');render();return;}
-  points.push({lat,lon,accuracy:Number.isFinite(accuracy)?accuracy:null,source:'gps',capturedAt:new Date(pos.timestamp).toISOString()});status('Patok '+points.length+' tersimpan'+(accuracy>10?' · akurasi rendah, pertimbangkan koreksi.':'.'));if(cameraDialog.open)cameraOverlay.showCapture(points.length);render();
+  points.push({lat,lon,accuracy:Number.isFinite(accuracy)?accuracy:null,source:'gps',capturedAt:new Date(pos.timestamp).toISOString()});status('Patok '+points.length+' tersimpan'+(accuracy>10?' · akurasi rendah, pertimbangkan koreksi.':'.'));if(cameraDialog.open)cameraOverlay.showCapture(points.length,pos);render();
  },err=>{if(request!==positionRequest)return;locating=false;status('GPS gagal: '+({1:'izin ditolak',2:'lokasi tidak tersedia',3:'waktu habis'}[err.code]||'kesalahan lokasi')+'. Coba kembali atau input manual.');render();},{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 });
 $('manual-form').addEventListener('submit',e=>{e.preventDefault();if(locating){status('Tunggu GPS selesai.');return;}if(edit<0&&points.length>=200){status('Maksimal 200 patok.');return;}const lat=$('lat').valueAsNumber,lon=$('lon').valueAsNumber;if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180){status('Koordinat tidak valid.');return;}const p={lat,lon,accuracy:null,source:'manual',capturedAt:new Date().toISOString()};if(edit>=0)points[edit]=p;else points.push(p);resetEdit();status('Koordinat manual disimpan.');render();});

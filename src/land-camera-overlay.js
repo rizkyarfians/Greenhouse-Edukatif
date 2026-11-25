@@ -1,19 +1,23 @@
 import { projectStakeMarkers, rearCameraAxes } from './land-camera-bearing.js';
 
-export function createCameraOverlay({ button, overlay, markers, message, camera, getPoints }) {
+export function createCameraOverlay({ button, overlay, markers, message, savedStake, camera, getPoints }) {
   let watch = null;
   let timer = null;
   let session = 0;
   let position = null;
   let orientationReading = null;
-  let gpsError = false;
+  let gpsError = null;
+  let compassPermission = null;
+  let openedAt = 0;
   let capture = null;
   let captureTimer = null;
   const nodes = new Map();
 
   function onOrientation(event) {
     if (!event.absolute) return;
-    orientationReading = { axes: rearCameraAxes(event) };
+    const axes = rearCameraAxes(event);
+    orientationReading = { axes };
+    if (axes) button.hidden = true;
   }
 
   function render() {
@@ -23,12 +27,10 @@ export function createCameraOverlay({ button, overlay, markers, message, camera,
     let nearby = null;
     let label;
 
-    if (!points.length) label = 'Tambahkan patok GPS untuk menampilkan pin.';
-    else if (gpsError) label = 'GPS tidak tersedia. Cek izin lokasi HP.';
-    else if (!position || now - position.at > 60000) label = 'Menunggu lokasi GPS terbaru…';
-    else if (position.accuracy > 20) label = 'GPS kurang akurat. Tunggu sinyal membaik.';
-    else {
-      const projected = projectStakeMarkers(position, points, orientationReading?.axes, {
+    const freshPosition = gpsError !== 1 && position && now - position.at <= 60000;
+    if (points.length && freshPosition) {
+      const accurate = position.accuracy <= 20;
+      const projected = projectStakeMarkers(position, points, accurate ? orientationReading?.axes : null, {
         width: camera.clientWidth,
         height: camera.clientHeight,
         videoWidth: camera.videoWidth,
@@ -36,13 +38,26 @@ export function createCameraOverlay({ button, overlay, markers, message, camera,
         screenAngle: window.screen.orientation?.angle ?? window.orientation ?? 0,
       });
       visible = projected.visible;
-      nearby = projected.nearby;
-
-      if (!orientationReading) label = 'Menunggu kompas. Arahkan HP dan putar perlahan.';
-      else if (!orientationReading.axes) label = 'Arah kompas tidak tersedia di browser ini.';
-      else if (visible.length || nearby) label = 'Posisi perkiraan · GPS + kompas';
-      else label = 'Arahkan kamera ke lokasi patok.';
+      if (accurate) nearby = projected.nearby;
     }
+
+    if (!points.length) label = 'Tambah patok GPS untuk memunculkan pin.';
+    else if (nearby) label = 'Menjauh dari patok, lalu arahkan kamera kembali ke titiknya.';
+    else if (gpsError === 1) label = 'Izin GPS ditolak. Izinkan lokasi di Chrome.';
+    else if (!freshPosition) label = gpsError ? 'GPS belum dapat posisi. Coba di area terbuka.' : 'Menunggu posisi GPS…';
+    else if (position.accuracy > 20) label = `Akurasi GPS ±${Math.round(position.accuracy)} m. Tunggu sampai ≤20 m.`;
+    else if (compassPermission === 'denied') label = 'Izin kompas ditolak. Cek izin sensor gerak di Chrome.';
+    else if (!button.hidden && !orientationReading?.axes) label = 'Ketuk Izinkan kompas HP untuk menampilkan pin AR.';
+    else if (!orientationReading?.axes) label = now - openedAt < 5000
+      ? 'Menunggu kompas. Gerakkan HP perlahan.'
+      : 'Kompas tidak mengirim arah. Cek izin sensor gerak di Chrome.';
+    else if (visible.length) label = 'Pin GPS · posisi perkiraan';
+    else label = 'Patok di luar gambar. Arahkan kamera ke lokasi patok.';
+
+    const savedText = points.length ? `◆ Patok ${points.length} terekam` : '';
+    savedStake.hidden = !savedText || capture !== null || !!nearby ||
+      visible.some(marker => marker.number === points.length);
+    if (savedStake.textContent !== savedText) savedStake.textContent = savedText;
 
     if (message.textContent !== label) message.textContent = label;
     const displayed = visible.filter(marker => marker.number !== capture).map(marker => ({
@@ -73,7 +88,7 @@ export function createCameraOverlay({ button, overlay, markers, message, camera,
         node.dataset.state = state;
         const pin = document.createElement('span');
         pin.className = 'ls-camera-pin';
-        pin.textContent = state === 'capture' ? '✓' : number;
+        pin.textContent = number;
         pin.setAttribute('aria-hidden', 'true');
         const label = document.createElement('span');
         label.className = 'ls-camera-pin-label';
@@ -94,15 +109,20 @@ export function createCameraOverlay({ button, overlay, markers, message, camera,
     if (!overlay.hidden) render();
   }
 
-  function showCapture(number) {
+  function updatePosition(fix) {
+    const { latitude: lat, longitude: lon, accuracy } = fix.coords;
+    if (![lat, lon, accuracy, fix.timestamp].every(Number.isFinite) || accuracy < 0) return;
+    if (position && fix.timestamp < position.at) return;
+    position = { lat, lon, accuracy, at: fix.timestamp };
+    gpsError = null;
+  }
+
+  function showCapture(number, fix) {
     clearTimeout(captureTimer);
+    updatePosition(fix);
     capture = number;
-    overlay.hidden = false;
     render();
-    captureTimer = setTimeout(() => {
-      clearCapture();
-      if (timer === null) overlay.hidden = true;
-    }, 1800);
+    captureTimer = setTimeout(clearCapture, 1800);
   }
 
   function stop() {
@@ -114,70 +134,50 @@ export function createCameraOverlay({ button, overlay, markers, message, camera,
     window.removeEventListener('deviceorientationabsolute', onOrientation);
     window.removeEventListener('deviceorientation', onOrientation);
     watch = timer = position = orientationReading = null;
-    gpsError = false;
+    gpsError = compassPermission = null;
     nodes.clear();
     markers.replaceChildren();
+    savedStake.hidden = true;
     overlay.hidden = true;
+    button.hidden = true;
     button.disabled = false;
-    button.textContent = 'Tampilkan arah patok';
   }
 
-  async function start() {
-    if (timer !== null || button.disabled) return;
-
-    const request = ++session;
-    const orientation = window.DeviceOrientationEvent;
-    overlay.hidden = false;
-    if (!orientation || !navigator.geolocation) {
-      message.textContent = 'GPS atau kompas tidak tersedia di browser ini.';
-      return;
-    }
-
+  button.addEventListener('click', async () => {
+    const request = session;
     button.disabled = true;
     try {
-      const permission = typeof orientation.requestPermission === 'function'
-        ? await orientation.requestPermission(true) : 'granted';
+      const permission = await window.DeviceOrientationEvent.requestPermission(true);
       if (request !== session) return;
-      if (permission !== 'granted') {
-        message.textContent = 'Izin kompas belum diberikan.';
-        return;
-      }
-
-      window.addEventListener('deviceorientationabsolute', onOrientation);
-      window.addEventListener('deviceorientation', onOrientation);
-      watch = navigator.geolocation.watchPosition(fix => {
-        if (request !== session) return;
-        const { latitude: lat, longitude: lon, accuracy } = fix.coords;
-        position = [lat, lon, accuracy].every(Number.isFinite)
-          ? { lat, lon, accuracy, at: fix.timestamp } : null;
-        gpsError = false;
-      }, () => {
-        if (request !== session) return;
-        position = null;
-        gpsError = true;
-      }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
-
-      timer = setInterval(render, 50);
-      button.textContent = 'Sembunyikan arah patok';
-      render();
+      compassPermission = permission;
+      button.hidden = permission === 'granted';
     } catch {
-      if (request !== session) return;
-      stop();
-      overlay.hidden = false;
-      message.textContent = 'Arah patok tidak tersedia. Cek izin sensor dan lokasi.';
+      if (request === session) compassPermission = 'denied';
     } finally {
-      if (request === session) button.disabled = false;
+      if (request === session) {
+        button.disabled = false;
+        render();
+      }
     }
-  }
-
-  button.addEventListener('click', () => {
-    if (timer !== null) stop();
-    else start();
   });
 
   function startAutomatically() {
-    // Some browsers require the orientation prompt to follow a direct tap.
-    if (typeof window.DeviceOrientationEvent?.requestPermission !== 'function') start();
+    if (timer !== null) return;
+    const request = ++session;
+    openedAt = Date.now();
+    overlay.hidden = false;
+    button.hidden = typeof window.DeviceOrientationEvent?.requestPermission !== 'function';
+    window.addEventListener('deviceorientationabsolute', onOrientation);
+    window.addEventListener('deviceorientation', onOrientation);
+    if (navigator.geolocation) {
+      watch = navigator.geolocation.watchPosition(fix => {
+        if (request === session) updatePosition(fix);
+      }, error => {
+        if (request === session) gpsError = error.code;
+      }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+    }
+    timer = setInterval(render, 100);
+    render();
   }
 
   return { stop, startAutomatically, showCapture, clearCapture };
