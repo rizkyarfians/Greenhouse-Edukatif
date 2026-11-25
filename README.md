@@ -108,6 +108,8 @@ Halaman awal menyediakan **Masuk dengan Google** dan **Lanjut sebagai tamu**. Un
 
 5. Jalankan `npm ci` dan `npm run build`, lalu refresh halaman utama di HP. Firebase Auth bisa dipakai dari build statis pada tunnel yang mengarah ke port 8080. Jika tunnel sementara berganti hostname, tambahkan hostname yang baru ke **Authorized domains**.
 
+Periksa output build untuk `[Firebase Auth] Konfigurasi Web App terbaca dan disertakan di build.` Jika muncul daftar variabel kosong, cek bahwa nama file persis `.env.local`, termasuk saat Windows menyembunyikan ekstensi `.txt`. Jika pop-up gagal, halaman menampilkan kode Firebase untuk membantu diagnosis.
+
 Gunakan konfigurasi Web App saja. Google login melalui Firebase membuka pemilih akun Google di pop-up dan menampilkan akun pada dashboard. Data scan masih tersimpan di browser. Firebase ID token belum diverifikasi oleh Fastify karena alur trial belum memiliki endpoint penyimpanan per akun.
 
 ### Alternatif login Google melalui Fastify

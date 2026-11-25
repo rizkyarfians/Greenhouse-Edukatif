@@ -1,10 +1,14 @@
 import './login.css';
-import { firebaseConfigured, loadFirebaseAuth } from './firebase-auth.js';
+import { firebaseConfigured, firebaseConfigIssue, loadFirebaseAuth } from './firebase-auth.js';
 
 const button = document.getElementById('google-login');
 const status = document.getElementById('login-status');
 const messages = new Map([
-  ['unavailable', 'Login Google belum tersedia. Anda bisa lanjut sebagai tamu.'],
+  ['unavailable', 'Login Google belum aktif pada versi ini. Anda bisa lanjut sebagai tamu.'],
+  ['auth/invalid-auth-domain', 'Format authDomain Firebase keliru. Gunakan hostname dari konfigurasi Web App Firebase.'],
+  ['auth/invalid-api-key', 'Firebase menolak API key. Cek konfigurasi Web App pada project yang sama.'],
+  ['auth/configuration-not-found', 'Firebase Authentication belum tersedia di project ini. Cek pengaturan Authentication di Firebase Console.'],
+  ['auth/operation-not-supported-in-this-environment', 'Buka halaman lewat HTTPS di Chrome, Safari, atau Firefox.'],
   ['expired', 'Permintaan login kedaluwarsa. Coba masuk lagi.'],
   ['cancelled', 'Login Google dibatalkan.'],
   ['failed', 'Login Google belum berhasil. Coba lagi atau masuk sebagai tamu.'],
@@ -15,11 +19,24 @@ const messages = new Map([
   ['auth/network-request-failed', 'Koneksi ke Google gagal. Periksa internet dan coba lagi.'],
 ]);
 const message = messages.get(new URLSearchParams(location.search).get('login'));
+function firebaseError(error, fallback = 'failed') {
+  const code = typeof error?.code === 'string' && /^auth\/[a-z-]{1,70}$/.test(error.code) ? error.code : '';
+  const guidance = messages.get(code) ?? messages.get(fallback);
+  return code ? `${guidance} (${code})` : guidance;
+}
 status.textContent = message ?? '';
 
 async function prepareGoogleLogin() {
   if (firebaseConfigured) {
-    const firebase = await loadFirebaseAuth();
+    status.textContent = 'Menyiapkan login Google…';
+    let firebase;
+    try {
+      firebase = await loadFirebaseAuth();
+    } catch (error) {
+      status.textContent = firebaseError(error, 'unavailable');
+      return;
+    }
+    status.textContent = message ?? '';
     button.addEventListener('click', async () => {
       button.disabled = true;
       status.textContent = '';
@@ -27,7 +44,7 @@ async function prepareGoogleLogin() {
         await firebase.signIn();
         location.assign('./dashboard.html?account=google');
       } catch (error) {
-        status.textContent = messages.get(error.code) ?? messages.get('failed');
+        status.textContent = firebaseError(error);
         button.disabled = false;
       }
     });
@@ -42,5 +59,5 @@ async function prepareGoogleLogin() {
 }
 
 prepareGoogleLogin().catch(() => {
-  if (!message) status.textContent = messages.get('unavailable');
+  if (!message) status.textContent = messages.get(firebaseConfigIssue || 'unavailable');
 });

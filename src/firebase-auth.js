@@ -1,11 +1,7 @@
-const config = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+const config = __AUTOMOTION_FIREBASE_CONFIG__;
 
-export const firebaseConfigured = Object.values(config).every(value => typeof value === 'string' && value.trim());
+export const firebaseConfigured = config !== null;
+export const firebaseConfigIssue = __AUTOMOTION_FIREBASE_CONFIG_ISSUE__;
 let initialized;
 
 export function loadFirebaseAuth() {
