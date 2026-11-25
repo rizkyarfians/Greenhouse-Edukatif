@@ -3,6 +3,13 @@ import {
   PerspectiveCamera, Scene, Vector3, WebGLRenderer,
 } from 'three';
 
+const stakeHeightM = 1.15;
+
+export function stakeDisplayScale(focal, depth) {
+  const naturalHeight = focal * stakeHeightM / depth;
+  return Math.max(1, 52 / naturalHeight);
+}
+
 const vertical = new Vector3(0, 1, 0);
 
 export function createStakeModelLayer(container) {
@@ -78,6 +85,8 @@ export function createStakeModelLayer(container) {
       const depth = marker.depth;
       stake.position.set((marker.x - 0.5) * width * depth / focal,
         (0.5 - marker.y) * height * depth / focal, -depth);
+      // Increase the visible size around the same GPS ground point at long range.
+      stake.scale.setScalar(stakeDisplayScale(focal, depth));
       worldUp.set(...view.up);
       stake.quaternion.setFromUnitVectors(vertical, worldUp.normalize());
     }

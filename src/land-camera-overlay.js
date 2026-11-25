@@ -1,5 +1,13 @@
 import { projectStakeMarkers, rearCameraAxes, steadyCameraAxes, steadyCameraFix } from './land-camera-bearing.js';
 
+const cameraDirections = {
+  behind: 'Putar badan menghadap',
+  left: 'Geser kamera ke kiri menuju',
+  right: 'Geser kamera ke kanan menuju',
+  up: 'Angkat kamera ke arah',
+  down: 'Turunkan kamera ke arah',
+};
+
 export function createCameraOverlay({ button, overlay, markers, models, message, savedStake, camera, getPoints }) {
   let watch = null;
   let timer = null;
@@ -10,6 +18,7 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
   let compassPermission = null;
   let openedAt = 0;
   let modelLayer = null;
+  let modelLoading = false;
   const nodes = new Map();
 
   function onOrientation(event) {
@@ -24,6 +33,7 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     const now = Date.now();
     let visible = [];
     let nearby = null;
+    let offscreen = null;
     const view = {
       width: camera.clientWidth,
       height: camera.clientHeight,
@@ -40,7 +50,10 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
       const projected = projectStakeMarkers(position, points, accurate ? orientationReading?.axes : null, view);
       modelView = { ...view, focal: projected.focal, up: projected.up };
       visible = projected.visible;
-      if (accurate) nearby = projected.nearby;
+      if (accurate) {
+        nearby = projected.nearby;
+        offscreen = projected.offscreen;
+      }
     }
 
     if (!points.length) label = 'Tambah patok GPS untuk memunculkan pin.';
@@ -53,8 +66,9 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     else if (!orientationReading?.axes) label = now - openedAt < 5000
       ? 'Menunggu kompas. Gerakkan HP perlahan.'
       : 'Kompas tidak mengirim arah. Cek izin sensor gerak di Chrome.';
-    else if (visible.length) label = 'Patok 3D · posisi perkiraan GPS';
-    else if (nearby) label = 'Terlalu dekat untuk menentukan arah. Menjauh, lalu bidik balik.';
+    else if (visible.length) label = modelLoading ? 'Memuat model patok 3D…' : 'Patok 2D · WebGL 3D tidak tersedia.';
+    else if (offscreen) label = `${cameraDirections[offscreen.direction]} Patok ${offscreen.number} (≈${Math.round(offscreen.distance)} m).`;
+    else if (nearby) label = `Menjauh hingga sekitar ${Math.ceil(nearby.uncertainty) + 2} m dari Patok ${nearby.number}, lalu bidik balik.`;
     else label = 'Patok di luar gambar. Arahkan kamera ke lokasi patok.';
 
     const savedText = nearby ? `◆ Dekat Patok ${nearby.number}` :
@@ -62,7 +76,6 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     savedStake.hidden = !savedText || (!nearby && visible.some(marker => marker.number === points.length));
     if (savedStake.textContent !== savedText) savedStake.textContent = savedText;
 
-    if (message.textContent !== label) message.textContent = label;
     const keys = new Set(visible.map(marker => marker.number));
     for (const [key, node] of nodes) {
       if (keys.has(key)) continue;
@@ -95,6 +108,8 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
 
     const drewModels = modelLayer?.draw(visible, modelView) ?? false;
     overlay.classList.toggle('has-stake-models', drewModels);
+    if (drewModels) label = 'Patok 3D · posisi perkiraan GPS';
+    if (message.textContent !== label) message.textContent = label;
   }
 
   function updatePosition(fix) {
@@ -122,6 +137,7 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     markers.replaceChildren();
     modelLayer?.dispose();
     modelLayer = null;
+    modelLoading = false;
     overlay.classList.remove('has-stake-models');
     savedStake.hidden = true;
     overlay.hidden = true;
@@ -162,12 +178,16 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
         if (request === session) gpsError = error.code;
       }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
     }
+    modelLoading = true;
     import('./land-camera-stake-model.js').then(({ createStakeModelLayer }) => {
       if (request !== session) return;
       modelLayer = createStakeModelLayer(models);
-      render();
     }).catch(() => {
       // Numbered markers remain usable when the renderer cannot load.
+    }).finally(() => {
+      if (request !== session) return;
+      modelLoading = false;
+      render();
     });
     timer = setInterval(render, 50);
     render();

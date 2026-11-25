@@ -57,31 +57,43 @@ export function steadyCameraFix(previous, next) {
 export function projectStakeMarkers(position, points, axes, view) {
   const candidates = [];
   let nearby = null;
+  let offscreen = null;
   const angle = view.screenAngle * radians;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  const videoScale = Math.max(view.width / view.videoWidth, view.height / view.videoHeight);
+  const videoWidth = view.videoWidth || view.width;
+  const videoHeight = view.videoHeight || view.height;
+  const videoScale = Math.max(view.width / videoWidth, view.height / videoHeight);
   // Assume a 65 degree field of view along the long sensor axis.
-  const focal = Math.max(view.videoWidth, view.videoHeight) * videoScale / (2 * Math.tan(32.5 * radians));
+  const focal = Math.max(videoWidth, videoHeight) * videoScale / (2 * Math.tan(32.5 * radians));
 
   points.forEach((point, index) => {
     const { distance, vector } = groundOffset(position, point);
     const marker = { number: index + 1, distance };
 
-    if (distance <= Math.max(2, position.accuracy + (point.accuracy ?? 0))) {
-      if (!nearby || distance < nearby.distance) nearby = marker;
+    const uncertainty = Math.max(2, Math.hypot(position.accuracy, point.accuracy ?? 0));
+    if (distance <= uncertainty) {
+      if (!nearby || distance < nearby.distance) nearby = { ...marker, uncertainty };
       return;
     }
 
     if (!axes || !Number.isFinite(focal)) return;
     const depth = dot(vector, axes.forward);
-    if (depth <= 0) return;
+    if (depth <= 0) {
+      if (!offscreen || distance < offscreen.distance) offscreen = { ...marker, direction: 'behind' };
+      return;
+    }
 
     const right = dot(vector, axes.right);
     const up = dot(vector, axes.up);
     const x = 0.5 + focal * (cos * right - sin * up) / depth / view.width;
     const y = 0.5 - focal * (sin * right + cos * up) / depth / view.height;
-    if (x >= 0 && x <= 1 && y >= 0 && y <= 1) candidates.push({ ...marker, x, y, depth });
+    if (x >= 0 && x <= 1 && y >= 0 && y <= 1) {
+      candidates.push({ ...marker, x, y, depth });
+    } else if (!offscreen || distance < offscreen.distance) {
+      const direction = x < 0 ? 'left' : x > 1 ? 'right' : y < 0 ? 'up' : 'down';
+      offscreen = { ...marker, direction };
+    }
   });
 
   candidates.sort((a, b) => a.distance - b.distance);
@@ -99,5 +111,5 @@ export function projectStakeMarkers(position, points, axes, view) {
     sin * axes.right[2] + cos * axes.up[2],
     -axes.forward[2],
   ] : null;
-  return { visible, nearby, focal, up };
+  return { visible, nearby, offscreen, focal, up };
 }

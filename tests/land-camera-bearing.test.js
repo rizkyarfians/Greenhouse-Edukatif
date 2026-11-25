@@ -62,3 +62,11 @@ test('holds minor compass noise and accepts a deliberate camera turn', () => {
   assert.equal(steadyCameraAxes(before, jitter), before);
   assert.equal(steadyCameraAxes(before, turn), turn);
 });
+
+test('guides the user toward a stake outside the camera view', () => {
+  const axes = rearCameraAxes(north);
+  const eastOfView = projectStakeMarkers(position, [{ lat: 0.0001, lon: 0.001 }], axes, view);
+  assert.equal(eastOfView.offscreen.direction, 'right');
+  const behind = projectStakeMarkers(position, [{ lat: -0.0002, lon: 0 }], axes, view);
+  assert.equal(behind.offscreen.direction, 'behind');
+});
