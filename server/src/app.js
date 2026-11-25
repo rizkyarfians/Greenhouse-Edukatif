@@ -1,7 +1,20 @@
-import Fastify from 'fastify'
+import Fastify, { LogController } from 'fastify'
+import fastifyStatic from '@fastify/static'
+import { registerGoogleLogin } from './google-login.js'
 
-export function buildApp({ pool, logger = false }) {
-  const app = Fastify({ logger })
+export function buildApp({ pool, logger = false, google = null, fetcher, webRoot }) {
+  const logController = new LogController({
+    disableRequestLogging: request => request.url?.startsWith('/api/auth/') ?? false,
+  })
+  const app = Fastify({ logger, logController })
+  registerGoogleLogin(app, google, fetcher)
+  if (webRoot) app.register(fastifyStatic, {
+    root: webRoot,
+    cacheControl: false,
+    setHeaders: (response, path) => {
+      if (path.endsWith('.html')) response.setHeader('Cache-Control', 'no-cache')
+    },
+  })
 
   pool.on('error', (error) => {
     app.log.warn({ code: error.code }, 'Idle database connection failed')

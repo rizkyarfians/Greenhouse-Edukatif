@@ -87,3 +87,15 @@ npm --prefix server run test:integration
 ```
 
 Tes integrasi memakai database pengembangan dari `.env` dan menjalankan migrasi. Untuk menghentikan database dengan volume data tetap tersimpan, jalankan `docker compose --env-file .env -f infrastructure/compose.yaml down`.
+
+## Halaman masuk untuk trial
+
+Halaman awal menyediakan **Masuk dengan Google** dan **Lanjut sebagai tamu**. Untuk tes Scan Lahan di HP, pilih tamu, pilih jenis lahan, lalu gunakan kamera dan GPS melalui alamat HTTPS. Build statis bisa disajikan dari folder `dist` seperti biasa. Hasil scan dan simulasi disimpan di browser, termasuk saat penguji masuk dengan Google.
+
+### Aktifkan login Google
+
+1. Di Google Cloud Console, atur consent screen dan buat OAuth client dengan tipe **Web application**. Daftarkan URI callback persis seperti yang akan dipakai, misalnya `http://localhost:3001/api/auth/google/callback`. Untuk HP, gunakan hostname HTTPS yang dapat didaftarkan di Google Cloud dan arahkan tunnel atau reverse proxy ke Fastify. Jika aplikasi masih dalam mode **Testing**, masukkan akun penguji jika Google Cloud meminta test users.
+2. Isi `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, dan `AUTH_SESSION_SECRET` di `.env`. Buat nilai rahasia sesi dengan `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Simpan rahasia hanya di server.
+3. Jalankan `npm --prefix server ci`, `npm run build`, lalu `npm --prefix server start`. Buka aplikasi dari origin yang sama dengan callback terdaftar. Untuk contoh localhost, alamatnya `http://localhost:3001/`. Fastify menyajikan `dist` sekaligus API login. Jika tunnel masih menuju server Python statis di port 8080, mode tamu tetap berjalan. Untuk Google, arahkan origin publik ke Fastify di port 3001.
+
+Jika konfigurasi Google belum diisi, tombol Google dinonaktifkan dan jalur tamu tersedia. Login Google hanya meminta identitas profil dan email. Akses kotak masuk Gmail dan sinkronisasi simpanan antarperangkat belum termasuk di trial.

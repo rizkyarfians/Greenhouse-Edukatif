@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { googleLoginConfig } from './google-login.js'
 import { buildApp } from './app.js'
 import { createPool } from './database.js'
 
@@ -6,7 +9,13 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('API_PORT must be an integer from 1 to 65535')
 }
 
-const app = buildApp({ pool: createPool(), logger: true })
+const dist = fileURLToPath(new URL('../../dist/', import.meta.url))
+const app = buildApp({
+  pool: createPool(),
+  logger: true,
+  google: googleLoginConfig(),
+  webRoot: existsSync(dist) ? dist : undefined,
+})
 
 async function shutdown() {
   try {

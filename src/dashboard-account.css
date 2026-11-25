@@ -1,0 +1,16 @@
+.account-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.account-nav .demo {
+  max-width: min(52vw, 260px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-nav a { color: #225b41; font-weight: 700; }
+.account-nav [hidden] { display: none; }
+#account-status:empty { display: none; }
