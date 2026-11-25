@@ -64,7 +64,7 @@ export function projectStakeMarkers(position, points, axes, view) {
     const up = dot(vector, axes.up);
     const x = 0.5 + focal * (cos * right - sin * up) / depth / view.width;
     const y = 0.5 - focal * (sin * right + cos * up) / depth / view.height;
-    if (x >= 0 && x <= 1 && y >= 0 && y <= 1) candidates.push({ ...marker, x, y });
+    if (x >= 0 && x <= 1 && y >= 0 && y <= 1) candidates.push({ ...marker, x, y, depth });
   });
 
   candidates.sort((a, b) => a.distance - b.distance);
@@ -77,5 +77,10 @@ export function projectStakeMarkers(position, points, axes, view) {
     ) >= 64)) visible.push(marker);
   }
 
-  return { visible, nearby };
+  const up = axes ? [
+    cos * axes.right[2] - sin * axes.up[2],
+    sin * axes.right[2] + cos * axes.up[2],
+    -axes.forward[2],
+  ] : null;
+  return { visible, nearby, focal, up };
 }

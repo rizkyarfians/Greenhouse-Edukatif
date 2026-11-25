@@ -1,6 +1,6 @@
 import { projectStakeMarkers, rearCameraAxes } from './land-camera-bearing.js';
 
-export function createCameraOverlay({ button, overlay, markers, message, savedStake, camera, getPoints }) {
+export function createCameraOverlay({ button, overlay, markers, models, message, savedStake, camera, getPoints }) {
   let watch = null;
   let timer = null;
   let session = 0;
@@ -10,6 +10,7 @@ export function createCameraOverlay({ button, overlay, markers, message, savedSt
   let compassPermission = null;
   let openedAt = 0;
   let capture = null;
+  let modelLayer = null;
   let captureTimer = null;
   const nodes = new Map();
 
@@ -25,18 +26,21 @@ export function createCameraOverlay({ button, overlay, markers, message, savedSt
     const now = Date.now();
     let visible = [];
     let nearby = null;
+    const view = {
+      width: camera.clientWidth,
+      height: camera.clientHeight,
+      videoWidth: camera.videoWidth,
+      videoHeight: camera.videoHeight,
+      screenAngle: window.screen.orientation?.angle ?? window.orientation ?? 0,
+    };
+    let modelView = view;
     let label;
 
     const freshPosition = gpsError !== 1 && position && now - position.at <= 60000;
     if (points.length && freshPosition) {
       const accurate = position.accuracy <= 20;
-      const projected = projectStakeMarkers(position, points, accurate ? orientationReading?.axes : null, {
-        width: camera.clientWidth,
-        height: camera.clientHeight,
-        videoWidth: camera.videoWidth,
-        videoHeight: camera.videoHeight,
-        screenAngle: window.screen.orientation?.angle ?? window.orientation ?? 0,
-      });
+      const projected = projectStakeMarkers(position, points, accurate ? orientationReading?.axes : null, view);
+      modelView = { ...view, focal: projected.focal, up: projected.up };
       visible = projected.visible;
       if (accurate) nearby = projected.nearby;
     }
@@ -66,10 +70,10 @@ export function createCameraOverlay({ button, overlay, markers, message, savedSt
       state: 'direction',
     }));
     if (nearby && nearby.number !== capture) {
-      displayed.push({ number: nearby.number, x: 0.5, text: `Dekat Patok ${nearby.number}`, state: 'nearby' });
+      displayed.push({ number: nearby.number, x: 0.5, y: 0.57, text: `Dekat Patok ${nearby.number}`, state: 'nearby' });
     }
     if (capture !== null) {
-      displayed.push({ number: capture, x: 0.5, text: `Patok ${capture} tersimpan`, state: 'capture' });
+      displayed.push({ number: capture, x: 0.5, y: 0.48, text: `Patok ${capture} tersimpan`, state: 'capture' });
     }
 
     const keys = new Set(displayed.map(marker => `${marker.state}-${marker.number}`));
@@ -99,8 +103,11 @@ export function createCameraOverlay({ button, overlay, markers, message, savedSt
       }
       if (node.lastElementChild.textContent !== text) node.lastElementChild.textContent = text;
       node.style.left = `${x * 100}%`;
-      if (state === 'direction') node.style.top = `${y * 100}%`;
+      node.style.top = `${y * 100}%`;
     }
+
+    const drewModels = modelLayer?.draw(displayed, modelView) ?? false;
+    overlay.classList.toggle('has-stake-models', drewModels);
   }
 
   function clearCapture() {
@@ -137,6 +144,9 @@ export function createCameraOverlay({ button, overlay, markers, message, savedSt
     gpsError = compassPermission = null;
     nodes.clear();
     markers.replaceChildren();
+    modelLayer?.dispose();
+    modelLayer = null;
+    overlay.classList.remove('has-stake-models');
     savedStake.hidden = true;
     overlay.hidden = true;
     button.hidden = true;
@@ -176,7 +186,14 @@ export function createCameraOverlay({ button, overlay, markers, message, savedSt
         if (request === session) gpsError = error.code;
       }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
     }
-    timer = setInterval(render, 100);
+    import('./land-camera-stake-model.js').then(({ createStakeModelLayer }) => {
+      if (request !== session) return;
+      modelLayer = createStakeModelLayer(models);
+      render();
+    }).catch(() => {
+      // Numbered markers remain usable when the renderer cannot load.
+    });
+    timer = setInterval(render, 50);
     render();
   }
 

@@ -11,6 +11,7 @@ const cameraOverlay = createCameraOverlay({
   button: $('camera-markers-toggle'),
   overlay: $('camera-overlay'),
   markers: $('camera-markers'),
+  models: $('camera-stake-models'),
   message: $('camera-direction'),
   savedStake: $('camera-saved-stake'),
   camera: $('camera'),
