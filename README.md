@@ -54,3 +54,7 @@ Simpanan menyimpan jenis lahan dan kondisi terakhir. Simpanan dari versi sebelum
 ## Workflow pengembangan
 
 Untuk sementara main adalah satu-satunya branch pengembangan aktif. Semua fitur dan aset digabungkan di main; branch lama dipertahankan sebagai arsip. Clone atau pull origin main untuk mendapatkan versi lengkap.
+
+## Backend engineering guideline
+
+Acuan arsitektur dan acceptance gate backend: [Automotion Server Architecture & Engineering Guideline v1.0](docs/SERVER_ARCHITECTURE_GUIDELINE.md). Rancangan ini bersifat proposed; belum ada backend production atau deployment. Seluruh pengembangan tetap di main.
