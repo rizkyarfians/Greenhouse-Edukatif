@@ -12,6 +12,7 @@ const cameraOverlay = createCameraOverlay({
   overlay: $('camera-overlay'),
   markers: $('camera-markers'),
   message: $('camera-direction'),
+  camera: $('camera'),
   getPoints: () => points,
 });
 const fmt=(n,d=1)=>n.toLocaleString('id-ID',{maximumFractionDigits:d});

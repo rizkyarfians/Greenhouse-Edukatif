@@ -1,6 +1,6 @@
-import { markerDirections, rearCameraHeading } from './land-camera-bearing.js';
+import { projectStakeMarkers, rearCameraAxes } from './land-camera-bearing.js';
 
-export function createCameraOverlay({ button, overlay, markers, message, getPoints }) {
+export function createCameraOverlay({ button, overlay, markers, message, camera, getPoints }) {
   let watch = null;
   let timer = null;
   let session = 0;
@@ -13,8 +13,7 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
 
   function onOrientation(event) {
     if (!event.absolute) return;
-    orientationReading = [event.alpha, event.beta, event.gamma].every(Number.isFinite)
-      ? { heading: rearCameraHeading(event) } : { unavailable: true };
+    orientationReading = { axes: rearCameraAxes(event) };
   }
 
   function render() {
@@ -24,19 +23,25 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
     let nearby = null;
     let label;
 
-    if (!points.length) label = 'Tambahkan patok GPS untuk menampilkan arah.';
+    if (!points.length) label = 'Tambahkan patok GPS untuk menampilkan pin.';
     else if (gpsError) label = 'GPS tidak tersedia. Cek izin lokasi HP.';
     else if (!position || now - position.at > 60000) label = 'Menunggu lokasi GPS terbaru…';
     else if (position.accuracy > 20) label = 'GPS kurang akurat. Tunggu sinyal membaik.';
-    else if (!orientationReading) label = 'Menunggu kompas. Arahkan HP dan putar perlahan.';
-    else if (orientationReading.unavailable) label = 'Arah kompas tidak tersedia di browser ini.';
-    else if (orientationReading.heading === null) label = 'Arahkan kamera mendatar ke lahan.';
     else {
-      const directions = markerDirections(position, points, orientationReading.heading);
-      visible = directions.visible;
-      nearby = directions.nearby;
-      label = directions.nearby ? `Di sekitar Patok ${directions.nearby.number}` :
-        visible.length ? 'Arah perkiraan · GPS + kompas' : 'Putar HP untuk mencari arah patok.';
+      const projected = projectStakeMarkers(position, points, orientationReading?.axes, {
+        width: camera.clientWidth,
+        height: camera.clientHeight,
+        videoWidth: camera.videoWidth,
+        videoHeight: camera.videoHeight,
+        screenAngle: window.screen.orientation?.angle ?? window.orientation ?? 0,
+      });
+      visible = projected.visible;
+      nearby = projected.nearby;
+
+      if (!orientationReading) label = 'Menunggu kompas. Arahkan HP dan putar perlahan.';
+      else if (!orientationReading.axes) label = 'Arah kompas tidak tersedia di browser ini.';
+      else if (visible.length || nearby) label = 'Posisi perkiraan · GPS + kompas';
+      else label = 'Arahkan kamera ke lokasi patok.';
     }
 
     if (message.textContent !== label) message.textContent = label;
@@ -46,10 +51,10 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
       state: 'direction',
     }));
     if (nearby && nearby.number !== capture) {
-      displayed.push({ number: nearby.number, angle: 0, text: `Dekat Patok ${nearby.number}`, state: 'nearby' });
+      displayed.push({ number: nearby.number, x: 0.5, text: `Dekat Patok ${nearby.number}`, state: 'nearby' });
     }
     if (capture !== null) {
-      displayed.push({ number: capture, angle: 0, text: `Patok ${capture} tersimpan`, state: 'capture' });
+      displayed.push({ number: capture, x: 0.5, text: `Patok ${capture} tersimpan`, state: 'capture' });
     }
 
     const keys = new Set(displayed.map(marker => `${marker.state}-${marker.number}`));
@@ -59,7 +64,7 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
       nodes.delete(key);
     }
 
-    for (const { number, angle, text, state } of displayed) {
+    for (const { number, x, y, text, state } of displayed) {
       const key = `${state}-${number}`;
       let node = nodes.get(key);
       if (!node) {
@@ -78,7 +83,8 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
         nodes.set(key, node);
       }
       if (node.lastElementChild.textContent !== text) node.lastElementChild.textContent = text;
-      node.style.left = `${50 + angle * 34 / 35}%`;
+      node.style.left = `${x * 100}%`;
+      if (state === 'direction') node.style.top = `${y * 100}%`;
     }
   }
 
@@ -151,7 +157,7 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
         gpsError = true;
       }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
 
-      timer = setInterval(render, 150);
+      timer = setInterval(render, 50);
       button.textContent = 'Sembunyikan arah patok';
       render();
     } catch {
