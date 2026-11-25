@@ -92,7 +92,25 @@ Tes integrasi memakai database pengembangan dari `.env` dan menjalankan migrasi.
 
 Halaman awal menyediakan **Masuk dengan Google** dan **Lanjut sebagai tamu**. Untuk tes Scan Lahan di HP, pilih tamu, pilih jenis lahan, lalu gunakan kamera dan GPS melalui alamat HTTPS. Build statis bisa disajikan dari folder `dist` seperti biasa. Hasil scan dan simulasi disimpan di browser, termasuk saat penguji masuk dengan Google.
 
-### Aktifkan login Google
+### Aktifkan login Google dengan Firebase
+
+1. Di [Firebase Console](https://console.firebase.google.com/), pilih project Automotion atau buat project. Buka **Project settings → General → Your apps**, pilih ikon **Web (</>)**, lalu register app. Salin konfigurasi web `firebaseConfig`.
+2. Buka **Authentication → Get started → Sign-in method → Google**, aktifkan Google, pilih email dukungan bila diminta, lalu simpan.
+3. Di **Authentication → Settings → Authorized domains**, tambahkan hostname HTTPS yang dipakai untuk membuka app, misalnya `contoh.trycloudflare.com`. Isi hostname saja. Tambahkan `localhost` secara terpisah jika ingin tes lokal dan domain itu belum terdaftar.
+4. Buat `.env.local` di root repo, lalu isi nilai Web App dari Firebase Console.
+
+   ```dotenv
+   VITE_FIREBASE_API_KEY=nilai_apiKey
+   VITE_FIREBASE_AUTH_DOMAIN=nilai_authDomain
+   VITE_FIREBASE_PROJECT_ID=nilai_projectId
+   VITE_FIREBASE_APP_ID=nilai_appId
+   ```
+
+5. Jalankan `npm ci` dan `npm run build`, lalu refresh halaman utama di HP. Firebase Auth bisa dipakai dari build statis pada tunnel yang mengarah ke port 8080. Jika tunnel sementara berganti hostname, tambahkan hostname yang baru ke **Authorized domains**.
+
+Gunakan konfigurasi Web App saja. Google login melalui Firebase membuka pemilih akun Google di pop-up dan menampilkan akun pada dashboard. Data scan masih tersimpan di browser. Firebase ID token belum diverifikasi oleh Fastify karena alur trial belum memiliki endpoint penyimpanan per akun.
+
+### Alternatif login Google melalui Fastify
 
 1. Di Google Cloud Console, atur consent screen dan buat OAuth client dengan tipe **Web application**. Daftarkan URI callback persis seperti yang akan dipakai, misalnya `http://localhost:3001/api/auth/google/callback`. Untuk HP, gunakan hostname HTTPS yang dapat didaftarkan di Google Cloud dan arahkan tunnel atau reverse proxy ke Fastify. Jika aplikasi masih dalam mode **Testing**, masukkan akun penguji jika Google Cloud meminta test users.
 2. Isi `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, dan `AUTH_SESSION_SECRET` di `.env`. Buat nilai rahasia sesi dengan `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. Simpan rahasia hanya di server.
