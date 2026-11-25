@@ -2,7 +2,7 @@
 
 | Atribut | Keterangan |
 |---|---|
-| Versi | 1.0 — baseline usulan implementasi |
+| Versi | 1.1 — baseline usulan implementasi |
 | Status | Proposed; perlu review tim sebelum production |
 | Cakupan | Backend, database, geospatial, intelligence, IoT, edge, deployment |
 | Repository | rizkyarfians/Greenhouse-Edukatif |
@@ -161,7 +161,8 @@ Prefix /api/v1. Gunakan JSON, schema validasi input/output, pagination, limit uk
 | POST | /api/v1/auth/logout | Cabut sesi |
 | GET | /api/v1/me | Identitas dan role |
 | GET/POST | /api/v1/projects | List / buat project |
-| GET/PATCH | /api/v1/farms/:farmId | Detail / update farm |
+| GET/POST | /api/v1/projects/:projectId/farms | Daftar / buat farm dalam project |
+| GET/PATCH/DELETE | /api/v1/farms/:farmId | Detail / update / arsipkan farm |
 | PUT | /api/v1/farms/:farmId/boundary | Simpan versi boundary |
 | GET/POST | /api/v1/farms/:farmId/layouts | List / simpan layout |
 | POST | /api/v1/farms/:farmId/climate/refresh | Enqueue refresh |
@@ -175,6 +176,11 @@ Prefix /api/v1. Gunakan JSON, schema validasi input/output, pagination, limit uk
 
 Session browser dengan cookie Secure, HttpOnly, SameSite dan CSRF protection sesuai alur; password menggunakan hash modern (Argon2id atau setara), rate limit dan revocation. Device tidak menggunakan cookie user. Role awal owner/admin/operator/viewer; akses command terpisah dari view. Default deny. SSE harus memeriksa session, tenant dan reconnect, serta tidak digunakan sebagai jalur command fisik.
 
+Kontrak scan dan impor guest:
+- Kamera membantu pengguna melihat patok. Koordinat titik berasal dari GPS ponsel atau input manual. Kirim batas sebagai GeoJSON Polygon dengan koordinat `[longitude, latitude]` (WGS 84), serta sumber dan akurasi GPS bila tersedia. Foto dan video tetap di perangkat. Server memvalidasi polygon dan mengembalikan `boundaryVersionId` serta luas estimasi `areaM2`.
+- Gunakan `greenhouse` atau `open_field` untuk farm baru. Saat impor guest, petakan `open-field` ke `open_field` dan gunakan `open_field` bila profil lama tidak memiliki `landType`. Tolak nilai eksplisit yang tidak dikenal. Verifikasi akses ke project sebelum membuat farm atau mengimpor data.
+- `DELETE` mengarsipkan farm planning. Farm terarsip tidak tampil dalam daftar aktif. Connected Farm harus melewati decommissioning sebelum dapat diarsipkan.
+
 Contoh error:
 ```json
 {"error":{"code":"VALIDATION_ERROR","message":"Boundary tidak valid","requestId":"req-example"}}
@@ -185,6 +191,8 @@ Contoh error:
 - Climate service mengambil data provider dari backend dengan timeout, retry/backoff, cache, attribution dan quota; provider key tidak berada di frontend. Kirim lokasi minimum yang diperlukan sesuai persetujuan/kebijakan privasi.
 - Historis 90 hari, prakiraan jangka pendek dan klimatologi musiman adalah kategori berbeda. Simpan start/end, issue time, source, coverage, freshness dan batasan model. Klimatologi bukan prediksi aktual tiga bulan. Integrasi prediksi musiman dilakukan kemudian.
 - Open-Meteo gratis untuk prototype nonkomersial sesuai ketentuan; penggunaan komersial harus memiliki lisensi/alternatif yang sesuai.
+- Simpan `boundaryVersionId` pada job dan hasil iklim serta rekomendasi, termasuk versi yang dipakai untuk mengambil lokasi pusat lahan. Rekomendasi hanya memakai data iklim dari versi boundary yang sama. Jika patok berubah saat job berjalan atau setelah hasil tersimpan, hasil versi lama tetap tersedia sebagai riwayat. Tandai hasil tersebut tidak berlaku untuk boundary aktif dan minta pengguna menjalankan analisis ulang.
+- Respons iklim memisahkan `historical90Days`, `shortTermForecast` dan `seasonalClimatology3Months`. Setiap bagian membawa periode, sumber, cakupan, freshness dan status ketersediaan masing-masing. Kegagalan satu bagian tidak menghapus hasil bagian lain.
 - Greenhouse: data outdoor hanya konteks; gunakan data indoor aktual atau input target berlabel. Open field: data outdoor, tanah, drainase, air dan fase tanaman.
 - Rules/fuzzy logic digunakan terlebih dahulu. Bobot dan threshold perlu agronomist review; simpan model_version, input snapshot dan hasil. Confidence/coverage bukan probabilitas hasil panen.
 - ML hanya setelah dataset memadai dan evaluasi out-of-sample. LLM opsional untuk penjelasan/advisory, tidak boleh mengirim command langsung.
@@ -217,7 +225,7 @@ Server menambahkan received_at, memvalidasi unit/range, mapping sensor, timestam
 
 requested -> validated -> queued -> sent -> acknowledged -> completed / failed / expired / rejected.
 
-Command wajib memiliki commandId, schemaVersion, target actuator, action, parameter yang diizinkan, issuedAt, expiresAt, actor/policy dan correlation ID. ACK perangkat menyertakan commandId, hasil, reason, timestamp dan state aktual bila tersedia. Status sent/ACK tidak berarti pompa benar-benar menyala; verifikasi melalui feedback aktual bila tersedia.
+Command wajib memiliki commandId, schemaVersion, target actuator, action, parameter yang diizinkan, issuedAt, expiresAt, actor/policy dan correlation ID. ACK perangkat menyertakan commandId, hasil, reason dan timestamp. Respons API memisahkan status command dari kondisi pompa teramati (`on`, `off`, `unknown`), dengan waktu dan sumber feedback. Setelah ACK diterima, tampilkan **Command diterima · kondisi pompa belum terkonfirmasi** sampai ada feedback aktual yang valid, masih segar, dan diambil setelah command dikirim. Feedback lama boleh ditampilkan sebagai riwayat. Bila feedback hilang hingga tenggat verifikasi, kondisi untuk command itu tetap `unknown` dan UI menampilkan **Kondisi pompa tidak terkonfirmasi**. Tenggat ditetapkan per jenis perangkat saat commissioning.
 
 - Gunakan QoS 1 dengan idempotency, **command tidak retained**, expiry pendek sesuai jenis operasi; device menolak command lama, duplicate, salah target atau tidak diotorisasi.
 - Terapkan max runtime, cooldown, dry-run/water-level/flow interlock yang sesuai hardware, sensor freshness, emergency stop, watchdog, dan boot-safe output. Detail threshold ditetapkan saat commissioning, bukan default universal.
@@ -242,11 +250,11 @@ Data privacy: persetujuan lokasi, export/delete sesuai kebijakan, pembatasan aks
 |---|---|---|
 | B01 Foundation | Node/Fastify, config, Compose, PostgreSQL/PostGIS, migrations | Fresh install dari README berhasil; DB ready; live/ready endpoint; migration repeatable; tests dan build CI lulus; tidak ada secret committed |
 | B02 Auth & tenant | User, membership, role, sessions | Register/login/logout; rate limit; owner/viewer; request cross-tenant ditolak termasuk ID guessing; session revocation diuji |
-| B03 Farm management | Project, farm, polygon, zone, layout, guest import | Kedua jenis lahan CRUD; geometry invalid ditolak; server area; import idempotent dan consent; data tetap ada setelah restart; simulasi guest tetap berfungsi |
-| B04 Climate & intelligence | Weather proxy/cache, recommendation service | Provider failure dan stale data ditampilkan; source/version/coverage; aturan greenhouse vs open field; test fixture; review agronomi sebelum klaim rekomendasi |
+| B03 Farm management | Project, farm, polygon, zone, layout, guest import | Kedua jenis lahan CRUD; geometry invalid ditolak; server area; metadata GPS opsional; import idempotent dan consent; profil lama tanpa landType tetap bisa diimpor; data tetap ada setelah restart; simulasi guest tetap berfungsi |
+| B04 Climate & intelligence | Weather proxy/cache, recommendation service | Provider failure dan stale data ditampilkan per kategori iklim; perubahan patok memicu kebutuhan analisis ulang dan menjaga hasil versi lama sebagai riwayat; source/version/coverage; aturan greenhouse vs open field; test fixture; review agronomi sebelum klaim rekomendasi |
 | B05 IoT read-only | MQTT TLS/ACL, registry, heartbeat, ingestion, SSE | Device unauthorized ditolak; duplicate/out-of-order ditangani; dashboard membedakan real/sim; offline status; tidak ada command hardware aktif |
 | B06 Adaptive advisory | Telemetry analysis, alert, water estimator | Missing/invalid/stale data terblokir; advisory beralasan; unit dan asumsi terdokumentasi; review domain |
-| B07 Edge & automation | Gateway offline, commands, ACK, safety | Bench test dengan dummy load; interlock, timeout, duplicate/expired command, lost network, reboot, emergency stop; commissioning dan approval sebelum aktuator fisik |
+| B07 Edge & automation | Gateway offline, commands, ACK, safety | Bench test dengan dummy load; interlock, timeout, duplicate/expired command, lost network, reboot, emergency stop; ACK tanpa feedback, feedback basi dan timeout tidak menampilkan pompa menyala; feedback aktual yang valid memperbarui kondisi pompa; commissioning dan approval sebelum aktuator fisik |
 | B08 Production readiness | Security, load, recovery, monitoring | Build/E2E, tenant isolation, security checks, load test sesuai target pilot, backup/restore, rollback runbook, incident owner dan sign-off |
 
 Status awal: B01–B08 planned. Urutan B01–B03 diprioritaskan sebelum Cycle 05 frontend/IoT; connected-farm actuation tidak diaktifkan sebelum B07 lolos. Parallel work diperbolehkan untuk UI mock dan firmware bench yang tidak terhubung perangkat fisik produksi.
@@ -301,3 +309,4 @@ Keputusan ini tidak menghalangi B01 untuk prototype lokal, tetapi harus diselesa
 
 ### Changelog
 - v1.0: baseline arsitektur cloud–edge, modular monolith, multi-land/multi-tenant, kontrak API, safety IoT dan roadmap backend.
+- v1.1: perjelas kontrak scan dan impor guest, versi boundary untuk hasil analisis, serta verifikasi kondisi pompa setelah ACK.
