@@ -1,11 +1,19 @@
 import './land-scanner.css';
 import {measure} from './land-geometry.js';
 import {landType} from './land-type.js';
+import {createCameraOverlay} from './land-camera-overlay.js';
 const $=id=>document.getElementById(id);
 const key='automotion.land.v1';
 const requested=new URLSearchParams(location.search).get('type');
 try{const saved=JSON.parse(localStorage.getItem(key)||'null');$('land-type').value=landType(requested||saved?.landType);}catch{$('land-type').value=landType(requested);}
 let points=[], edit=-1, stream=null, opening=false, cameraRequest=0, locating=false, positionRequest=0;
+const cameraOverlay = createCameraOverlay({
+  button: $('camera-markers-toggle'),
+  overlay: $('camera-overlay'),
+  markers: $('camera-markers'),
+  message: $('camera-direction'),
+  getPoints: () => points,
+});
 const fmt=(n,d=1)=>n.toLocaleString('id-ID',{maximumFractionDigits:d});
 const status=t=>{$('status').textContent=t;};
 const saveStatus=t=>{$('save-status').textContent=t;};
@@ -49,12 +57,12 @@ function render(){
   screen.forEach(([x,y],i)=>{svg.append(el('circle',{cx:x,cy:y,r:8,fill:'#246348',stroke:'white','stroke-width':2}));svg.append(el('text',{x,y:y+3.5,'text-anchor':'middle',fill:'white','font-size':9},i+1));});
 }
 function resetEdit(){edit=-1;$('manual-form').reset();$('manual-submit').textContent='Tambah koordinat';$('cancel-edit').hidden=true;}
-function stopCamera(){cameraRequest++;opening=false;stream?.getTracks().forEach(t=>t.stop());stream=null;$('camera').srcObject=null;$('camera').hidden=true;$('camera-placeholder').hidden=false;$('camera-toggle').textContent='Buka kamera';$('camera-toggle').disabled=false;$('camera-state').textContent='Kamera opsional';}
+function stopCamera(){cameraOverlay.stop();$('camera-markers-toggle').hidden=true;cameraRequest++;opening=false;stream?.getTracks().forEach(t=>t.stop());stream=null;$('camera').srcObject=null;$('camera').hidden=true;$('camera-placeholder').hidden=false;$('camera-toggle').textContent='Buka kamera';$('camera-toggle').disabled=false;$('camera-state').textContent='Kamera opsional';}
 $('camera-toggle').addEventListener('click',async()=>{
  if(stream||opening){stopCamera();return;}
  if(!navigator.mediaDevices?.getUserMedia){status('Kamera tidak tersedia. Gunakan HTTPS atau masukkan koordinat manual.');return;}
  const request=++cameraRequest;opening=true;$('camera-toggle').disabled=true;
- try{const next=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});if(request!==cameraRequest){next.getTracks().forEach(t=>t.stop());return;}stream=next;$('camera').srcObject=stream;$('camera').hidden=false;$('camera-placeholder').hidden=true;$('camera-state').textContent='Kamera aktif · GPS mengukur posisi HP';$('camera-toggle').textContent='Tutup kamera';}
+ try{const next=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});if(request!==cameraRequest){next.getTracks().forEach(t=>t.stop());return;}stream=next;$('camera').srcObject=stream;$('camera').hidden=false;$('camera-placeholder').hidden=true;$('camera-state').textContent='Kamera aktif · GPS mengukur posisi HP';$('camera-toggle').textContent='Tutup kamera';$('camera-markers-toggle').hidden=false;}
  catch(e){if(request===cameraRequest)status('Kamera tidak dapat dibuka. Periksa izin atau gunakan GPS saja.');}
  finally{if(request===cameraRequest){opening=false;$('camera-toggle').disabled=false;}}
 });
