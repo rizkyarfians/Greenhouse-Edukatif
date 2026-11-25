@@ -17,7 +17,7 @@ Viewer menggunakan WebGL jika tersedia. Jika perangkat tidak menyediakan WebGL, 
 
 Buka **Scan Lahan** dari dashboard. Kamera merupakan bantuan visual; GPS mengukur posisi ponsel saat tombol tambah patok ditekan. Datangi setiap batas berurutan, koreksi koordinat bila perlu, lalu simpan profil lokal atau ekspor GeoJSON. Kamera/GPS memerlukan HTTPS atau localhost; pada HP melalui IP lokal HTTP, gunakan koordinat manual atau deploy HTTPS. Data tidak dikirim ke server. Satu profil guest tersimpan per browser. Sketsa bukan citra satelit. Estimasi geometri menggunakan bidang singgung lokal (batas 10 km), bukan survei resmi.
 
-Saat kamera aktif, **Tampilkan arah patok** menambahkan nomor dan estimasi jarak patok pada preview jika GPS dan arah kompas tersedia. Label mengikuti arah kamera secara horizontal. Patok disimpan dari koordinat seperti biasa. Saat posisi berada di dalam rentang ketidakpastian GPS, preview menampilkan **Di sekitar Patok**.
+**Buka kamera** memenuhi viewport dengan tombol **Tambah patok GPS**, **Hapus terakhir**, dan **Tutup**. Pin konfirmasi muncul saat patok baru tersimpan. Jika GPS dan kompas tersedia, pin patok yang sudah direkam muncul di arah perkiraan pada kamera. Gunakan **Tampilkan arah patok** jika browser perlu meminta izin sensor lewat ketukan. Pin mengikuti arah horizontal dan menampilkan perkiraan jarak. Jika terlalu dekat untuk menentukan arah, tampil **Dekat Patok**. Pengukuran tetap memakai koordinat.
 
 Tes geometri: `node --test tests/land-geometry.test.js`. Build: `npm run build` menghasilkan index.html dan scan.html.
 

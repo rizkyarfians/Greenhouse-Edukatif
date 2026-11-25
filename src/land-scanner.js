@@ -15,13 +15,18 @@ const cameraOverlay = createCameraOverlay({
   getPoints: () => points,
 });
 const fmt=(n,d=1)=>n.toLocaleString('id-ID',{maximumFractionDigits:d});
-const status=t=>{$('status').textContent=t;};
+const cameraDialog = $('camera-dialog');
+const status = text => {
+  $('status').textContent = text;
+  if (cameraDialog.open) $('camera-status').textContent = text;
+};
 const saveStatus=t=>{$('save-status').textContent=t;};
 const NS='http://www.w3.org/2000/svg';
 const el=(tag,attrs,text)=>{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));if(text!==undefined)e.textContent=text;return e;};
 function render(){
   const r=measure(points);
   $('point-count').textContent=points.length+' patok';
+  $('camera-count').textContent = $('point-count').textContent;
   $('area').textContent=r.valid?fmt(r.area)+' m²':'—';
   $('hectare').textContent=r.valid?fmt(r.area/10000,4)+' ha':'';
   $('perimeter').textContent=r.valid?fmt(r.perimeter)+' m':'—';
@@ -29,6 +34,9 @@ function render(){
   $('save').disabled=$('download').disabled=!r.valid;
   $('undo').disabled=!points.length||locating;$('clear').disabled=!points.length;
   $('gps-add').disabled=locating||points.length>=200;
+  $('camera-add').disabled = $('gps-add').disabled;
+  $('camera-add').textContent = locating ? 'Mengambil lokasi…' : '+ Tambah patok GPS';
+  $('camera-undo').disabled = $('undo').disabled;
   const acc=points.filter(p=>Number.isFinite(p.accuracy)).map(p=>p.accuracy);
   const max=acc.length?Math.max(...acc):null;
   const unknown=points.length-acc.length;
@@ -57,15 +65,62 @@ function render(){
   screen.forEach(([x,y],i)=>{svg.append(el('circle',{cx:x,cy:y,r:8,fill:'#246348',stroke:'white','stroke-width':2}));svg.append(el('text',{x,y:y+3.5,'text-anchor':'middle',fill:'white','font-size':9},i+1));});
 }
 function resetEdit(){edit=-1;$('manual-form').reset();$('manual-submit').textContent='Tambah koordinat';$('cancel-edit').hidden=true;}
-function stopCamera(){cameraOverlay.stop();$('camera-markers-toggle').hidden=true;cameraRequest++;opening=false;stream?.getTracks().forEach(t=>t.stop());stream=null;$('camera').srcObject=null;$('camera').hidden=true;$('camera-placeholder').hidden=false;$('camera-toggle').textContent='Buka kamera';$('camera-toggle').disabled=false;$('camera-state').textContent='Kamera opsional';}
-$('camera-toggle').addEventListener('click',async()=>{
- if(stream||opening){stopCamera();return;}
- if(!navigator.mediaDevices?.getUserMedia){status('Kamera tidak tersedia. Gunakan HTTPS atau masukkan koordinat manual.');return;}
- const request=++cameraRequest;opening=true;$('camera-toggle').disabled=true;
- try{const next=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});if(request!==cameraRequest){next.getTracks().forEach(t=>t.stop());return;}stream=next;$('camera').srcObject=stream;$('camera').hidden=false;$('camera-placeholder').hidden=true;$('camera-state').textContent='Kamera aktif · GPS mengukur posisi HP';$('camera-toggle').textContent='Tutup kamera';$('camera-markers-toggle').hidden=false;}
- catch(e){if(request===cameraRequest)status('Kamera tidak dapat dibuka. Periksa izin atau gunakan GPS saja.');}
- finally{if(request===cameraRequest){opening=false;$('camera-toggle').disabled=false;}}
+function stopCamera() {
+  cameraOverlay.stop();
+  cameraRequest++;
+  opening = false;
+  stream?.getTracks().forEach(track => track.stop());
+  stream = null;
+  $('camera').srcObject = null;
+  if (cameraDialog.open) cameraDialog.close();
+  $('camera-toggle').disabled = false;
+}
+
+$('camera-toggle').addEventListener('click', async () => {
+  if (stream || opening) return;
+  if (!navigator.mediaDevices?.getUserMedia) {
+    status('Kamera tidak tersedia. Gunakan HTTPS atau masukkan koordinat manual.');
+    return;
+  }
+
+  const request = ++cameraRequest;
+  opening = true;
+  $('camera-toggle').disabled = true;
+  try {
+    const next = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false,
+    });
+    if (request !== cameraRequest) {
+      next.getTracks().forEach(track => track.stop());
+      return;
+    }
+
+    stream = next;
+    $('camera').srcObject = stream;
+    cameraDialog.showModal();
+    $('camera-status').textContent = 'Datangi patok, lalu tekan Tambah patok GPS.';
+    cameraOverlay.startAutomatically();
+  } catch {
+    if (request === cameraRequest) {
+      stopCamera();
+      status('Kamera tidak dapat dibuka. Periksa izin atau gunakan GPS saja.');
+    }
+  } finally {
+    if (request === cameraRequest) {
+      opening = false;
+      $('camera-toggle').disabled = false;
+    }
+  }
 });
+
+$('camera-close').addEventListener('click', stopCamera);
+cameraDialog.addEventListener('cancel', event => {
+  event.preventDefault();
+  stopCamera();
+});
+$('camera-add').addEventListener('click', () => $('gps-add').click());
+$('camera-undo').addEventListener('click', () => $('undo').click());
 $('gps-add').addEventListener('click',()=>{
  if(locating||points.length>=200)return;
  if(!navigator.geolocation){status('GPS tidak tersedia. Gunakan HTTPS atau koordinat manual.');return;}
@@ -74,12 +129,19 @@ $('gps-add').addEventListener('click',()=>{
   if(request!==positionRequest)return;locating=false;
   const {latitude:lat,longitude:lon,accuracy}=pos.coords;
   if(Date.now()-pos.timestamp>30000||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180){status('Lokasi tidak valid atau terlalu lama. Coba lagi.');render();return;}
-  points.push({lat,lon,accuracy:Number.isFinite(accuracy)?accuracy:null,source:'gps',capturedAt:new Date(pos.timestamp).toISOString()});status('Patok '+points.length+' tersimpan'+(accuracy>10?' · akurasi rendah, pertimbangkan koreksi.':'.'));render();
+  points.push({lat,lon,accuracy:Number.isFinite(accuracy)?accuracy:null,source:'gps',capturedAt:new Date(pos.timestamp).toISOString()});status('Patok '+points.length+' tersimpan'+(accuracy>10?' · akurasi rendah, pertimbangkan koreksi.':'.'));if(cameraDialog.open)cameraOverlay.showCapture(points.length);render();
  },err=>{if(request!==positionRequest)return;locating=false;status('GPS gagal: '+({1:'izin ditolak',2:'lokasi tidak tersedia',3:'waktu habis'}[err.code]||'kesalahan lokasi')+'. Coba kembali atau input manual.');render();},{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 });
 $('manual-form').addEventListener('submit',e=>{e.preventDefault();if(locating){status('Tunggu GPS selesai.');return;}if(edit<0&&points.length>=200){status('Maksimal 200 patok.');return;}const lat=$('lat').valueAsNumber,lon=$('lon').valueAsNumber;if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180){status('Koordinat tidak valid.');return;}const p={lat,lon,accuracy:null,source:'manual',capturedAt:new Date().toISOString()};if(edit>=0)points[edit]=p;else points.push(p);resetEdit();status('Koordinat manual disimpan.');render();});
 $('cancel-edit').addEventListener('click',resetEdit);
-$('undo').addEventListener('click',()=>{points.pop();resetEdit();render();});
+$('undo').addEventListener('click', () => {
+  const number = points.length;
+  points.pop();
+  cameraOverlay.clearCapture();
+  resetEdit();
+  status('Patok ' + number + ' dihapus.');
+  render();
+});
 $('clear').addEventListener('click',()=>{if(!confirm('Kosongkan patok yang sedang diedit? Simpanan tetap tersedia.'))return;positionRequest++;locating=false;points=[];resetEdit();status('Patok dikosongkan.');render();});
 function project(){const m=measure(points);if(!m.valid)return null;return {version:1,landType:landType($('land-type').value),name:$('project-name').value.trim()||'Lahan tanpa nama',points:points.map(p=>({...p})),areaM2:m.area,perimeterM:m.perimeter,center:m.center,updatedAt:new Date().toISOString(),method:'local-tangent-plane-estimate'};}
 $('save').addEventListener('click',()=>{const p=project();if(!p)return;try{if(localStorage.getItem(key)&&!confirm('Ganti profil lahan yang tersimpan di browser ini?'))return;localStorage.setItem(key,JSON.stringify(p));saveStatus('Profil disimpan di browser ini: '+p.name);}catch(e){saveStatus('Gagal menyimpan. Gunakan Ekspor GeoJSON.');}});

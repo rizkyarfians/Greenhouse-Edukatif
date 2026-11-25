@@ -5,8 +5,7 @@
 <main class="ls-shell">
 <section class="ls-intro"><p class="eyebrow">01 / LAND ASSESSMENT</p><h1>Ukur lahan Anda</h1><p>Datangi setiap patok batas lahan secara berurutan. Kamera membantu membidik; lokasi GPS diambil dari posisi HP, bukan objek di kejauhan.</p></section>
 <div class="ls-grid"><section class="ls-card">
-<h2>1. Tentukan patok</h2><label>Jenis budidaya<select id="land-type"><option value="open-field">Lahan terbuka</option><option value="greenhouse">Greenhouse</option></select></label><p class="ls-note">Untuk greenhouse, ukur area tapak yang tersedia.</p><div class="ls-camera"><video id="camera" autoplay muted playsinline hidden></video><div id="camera-placeholder">Kamera belum aktif</div><div class="ls-reticle" aria-hidden="true">＋</div><div id="camera-overlay" class="ls-camera-overlay" hidden><div id="camera-markers"></div><p id="camera-direction" class="ls-camera-direction"></p></div><span id="camera-state">Kamera opsional</span></div>
-<div class="ls-actions"><button id="camera-toggle" type="button" class="secondary">Buka kamera</button><button id="camera-markers-toggle" type="button" class="secondary" hidden>Tampilkan arah patok</button><button id="gps-add" type="button">+ Tambah patok GPS</button></div>
+<h2>1. Tentukan patok</h2><label>Jenis budidaya<select id="land-type"><option value="open-field">Lahan terbuka</option><option value="greenhouse">Greenhouse</option></select></label><p class="ls-note">Untuk greenhouse, ukur area tapak yang tersedia.</p><div class="ls-actions"><button id="camera-toggle" type="button" class="secondary">Buka kamera</button><button id="gps-add" type="button">+ Tambah patok GPS</button></div>
 <p class="ls-note">Berdiri di dekat patok, tunggu sinyal stabil, lalu tekan Tambah patok GPS. Ulangi mengelilingi lahan; tidak perlu mengulang titik pertama.</p>
 <p id="status" role="status" aria-live="polite" class="ls-status"></p>
 <details><summary>Input koordinat / koreksi manual</summary><form id="manual-form"><div class="ls-fields"><label>Latitude<input id="lat" type="number" step="any" min="-85" max="85" required placeholder="-7.95"></label><label>Longitude<input id="lon" type="number" step="any" min="-180" max="180" required placeholder="112.63"></label></div><div class="ls-actions"><button id="manual-submit" type="submit" class="secondary">Tambah koordinat</button><button id="cancel-edit" type="button" class="secondary" hidden>Batal koreksi</button></div></form></details>
@@ -18,4 +17,25 @@
 <a id="map-link" target="_blank" rel="noopener noreferrer" hidden>Lihat lokasi di OpenStreetMap ↗</a>
 <h2>3. Simpan profil lahan</h2><label>Nama lahan<input id="project-name" maxlength="80" placeholder="Contoh: Lahan 001"></label><div class="ls-actions"><button id="save" type="button" disabled>Simpan di perangkat</button><button id="restore" class="secondary" type="button">Buka simpanan</button><button id="download" class="secondary" type="button" disabled>Ekspor GeoJSON</button><button id="delete-save" class="secondary" type="button">Hapus simpanan</button></div><p id="save-status" role="status" class="ls-note"></p><p><a href="./climate.html">Lanjut ke analisis iklim →</a></p>
 <p class="ls-note">Simpanan guest hanya di browser ini. Koordinat tidak dikirim ke server. Hasil untuk perencanaan, bukan pengukuran resmi. Analisis iklim menggunakan profil terakhir yang disimpan; rekomendasi tanaman belum terhubung.</p></section></div>
-</main><script type="module" src="./src/land-scanner.js"></script></body></html>
+</main>
+<dialog id="camera-dialog" class="ls-camera" aria-labelledby="camera-title">
+  <video id="camera" autoplay muted playsinline></video>
+  <div class="ls-camera-reticle" aria-hidden="true"></div>
+  <div id="camera-overlay" class="ls-camera-overlay" hidden>
+    <p id="camera-direction" class="ls-camera-direction"></p>
+    <div id="camera-markers"></div>
+  </div>
+  <div class="ls-camera-header">
+    <div><h2 id="camera-title">Scan Lahan</h2><span id="camera-count">0 patok</span></div>
+    <button id="camera-close" type="button" autofocus>Tutup</button>
+  </div>
+  <div class="ls-camera-footer">
+    <p id="camera-status" role="status" class="ls-camera-status"></p>
+    <button id="camera-markers-toggle" type="button" class="ls-camera-overlay-toggle">Tampilkan arah patok</button>
+    <div class="ls-camera-actions">
+      <button id="camera-undo" type="button">Hapus terakhir</button>
+      <button id="camera-add" type="button">+ Tambah patok GPS</button>
+    </div>
+  </div>
+</dialog>
+<script type="module" src="./src/land-scanner.js"></script></body></html>

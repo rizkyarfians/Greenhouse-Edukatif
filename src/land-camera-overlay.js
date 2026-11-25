@@ -7,6 +7,8 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
   let position = null;
   let orientationReading = null;
   let gpsError = false;
+  let capture = null;
+  let captureTimer = null;
   const nodes = new Map();
 
   function onOrientation(event) {
@@ -19,6 +21,7 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
     const points = getPoints();
     const now = Date.now();
     let visible = [];
+    let nearby = null;
     let label;
 
     if (!points.length) label = 'Tambahkan patok GPS untuk menampilkan arah.';
@@ -31,36 +34,77 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
     else {
       const directions = markerDirections(position, points, orientationReading.heading);
       visible = directions.visible;
+      nearby = directions.nearby;
       label = directions.nearby ? `Di sekitar Patok ${directions.nearby.number}` :
         visible.length ? 'Arah perkiraan · GPS + kompas' : 'Putar HP untuk mencari arah patok.';
     }
 
     if (message.textContent !== label) message.textContent = label;
-    const visibleNumbers = new Set(visible.map(marker => marker.number));
-    for (const [number, node] of nodes) {
-      if (visibleNumbers.has(number)) continue;
-      node.remove();
-      nodes.delete(number);
+    const displayed = visible.filter(marker => marker.number !== capture).map(marker => ({
+      ...marker,
+      text: `Patok ${marker.number} · ≈${Math.round(marker.distance)} m`,
+      state: 'direction',
+    }));
+    if (nearby && nearby.number !== capture) {
+      displayed.push({ number: nearby.number, angle: 0, text: `Dekat Patok ${nearby.number}`, state: 'nearby' });
+    }
+    if (capture !== null) {
+      displayed.push({ number: capture, angle: 0, text: `Patok ${capture} tersimpan`, state: 'capture' });
     }
 
-    for (const { number, distance, angle } of visible) {
-      let node = nodes.get(number);
-      if (!node) {
-        node = document.createElement('span');
-        node.className = 'ls-camera-marker';
-        markers.append(node);
-        nodes.set(number, node);
-      }
-      const text = `Patok ${number} · ${Math.round(distance)} m`;
-      if (node.textContent !== text) node.textContent = text;
-      node.style.left = `${50 + angle * 32 / 35}%`;
+    const keys = new Set(displayed.map(marker => `${marker.state}-${marker.number}`));
+    for (const [key, node] of nodes) {
+      if (keys.has(key)) continue;
+      node.remove();
+      nodes.delete(key);
     }
+
+    for (const { number, angle, text, state } of displayed) {
+      const key = `${state}-${number}`;
+      let node = nodes.get(key);
+      if (!node) {
+        node = document.createElement('div');
+        node.className = 'ls-camera-marker';
+        node.dataset.state = state;
+        const pin = document.createElement('span');
+        pin.className = 'ls-camera-pin';
+        pin.textContent = state === 'capture' ? '✓' : number;
+        pin.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'ls-camera-pin-label';
+        label.textContent = text;
+        node.append(pin, label);
+        markers.append(node);
+        nodes.set(key, node);
+      }
+      if (node.lastElementChild.textContent !== text) node.lastElementChild.textContent = text;
+      node.style.left = `${50 + angle * 34 / 35}%`;
+    }
+  }
+
+  function clearCapture() {
+    clearTimeout(captureTimer);
+    captureTimer = capture = null;
+    if (!overlay.hidden) render();
+  }
+
+  function showCapture(number) {
+    clearTimeout(captureTimer);
+    capture = number;
+    overlay.hidden = false;
+    render();
+    captureTimer = setTimeout(() => {
+      clearCapture();
+      if (timer === null) overlay.hidden = true;
+    }, 1800);
   }
 
   function stop() {
     session++;
     if (watch !== null) navigator.geolocation.clearWatch(watch);
     clearInterval(timer);
+    clearTimeout(captureTimer);
+    captureTimer = capture = null;
     window.removeEventListener('deviceorientationabsolute', onOrientation);
     window.removeEventListener('deviceorientation', onOrientation);
     watch = timer = position = orientationReading = null;
@@ -72,11 +116,8 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
     button.textContent = 'Tampilkan arah patok';
   }
 
-  button.addEventListener('click', async () => {
-    if (timer !== null) {
-      stop();
-      return;
-    }
+  async function start() {
+    if (timer !== null || button.disabled) return;
 
     const request = ++session;
     const orientation = window.DeviceOrientationEvent;
@@ -121,7 +162,17 @@ export function createCameraOverlay({ button, overlay, markers, message, getPoin
     } finally {
       if (request === session) button.disabled = false;
     }
+  }
+
+  button.addEventListener('click', () => {
+    if (timer !== null) stop();
+    else start();
   });
 
-  return { stop };
+  function startAutomatically() {
+    // Some browsers require the orientation prompt to follow a direct tap.
+    if (typeof window.DeviceOrientationEvent?.requestPermission !== 'function') start();
+  }
+
+  return { stop, startAutomatically, showCapture, clearCapture };
 }

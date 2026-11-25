@@ -1,32 +1,149 @@
-:root{font:16px/1.5 system-ui,sans-serif;color:#203a2e;background:#f3f6ef}*{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}button,input{font:inherit}button{border:1px solid #236348;border-radius:10px;background:#236348;color:white;padding:10px 14px;cursor:pointer;font-weight:650;min-height:44px}button.secondary{background:#fff;color:#236348;border-color:#cedbce}button:disabled{opacity:.5;cursor:default}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #3889b3;outline-offset:3px}a{color:#236348;font-weight:650}.ls-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #dce5da;padding:16px max(16px,calc((100vw - 1160px)/2))}.ls-header strong{letter-spacing:.08em}.ls-header small{display:block;font-weight:400;letter-spacing:0}.ls-header span,.eyebrow{font-size:12px;font-weight:700;color:#52745f}.ls-shell{max-width:1200px;margin:auto;padding:24px 16px 48px}.ls-intro{max-width:740px;margin-bottom:24px}h1{font-size:clamp(32px,6vw,48px);letter-spacing:-.04em;line-height:1.1;margin:6px 0 12px}h2{font-size:20px;margin:0 0 12px}p{margin:8px 0}.ls-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.ls-card{padding:20px;border:1px solid #dce5da;background:white;border-radius:20px;min-width:0}.ls-camera{aspect-ratio:16/10;background:#203a2e;color:white;border-radius:14px;overflow:hidden;display:grid;place-items:center;position:relative}.ls-camera video{position:absolute;width:100%;height:100%;object-fit:cover}.ls-reticle{position:absolute;font-size:28px;top:50%;left:50%;transform:translate(-50%,-50%);color:#d9f8d9;text-shadow:0 1px 5px black;pointer-events:none}.ls-camera:has(video[hidden]) .ls-reticle{display:none}.ls-camera>span{position:absolute;left:9px;bottom:9px;font-size:12px;background:#0009;border-radius:8px;padding:6px 9px}.ls-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.ls-note{font-size:13px;color:#50665a}.ls-status{font-size:14px;color:#365847;background:#edf4eb;border-radius:9px;padding:10px;overflow-wrap:anywhere}.ls-status:empty{display:none}details{border-top:1px solid #dce5da;padding-top:12px;margin-top:12px}summary{cursor:pointer;font-weight:650}.ls-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}label{display:block;font-size:13px;font-weight:650}input{width:100%;min-width:0;padding:10px;border:1px solid #cedbce;border-radius:8px;margin-top:4px;color:#203a2e;background:#fff}.ls-points{list-style:none;padding:0;margin:0}.ls-points li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 0;border-top:1px solid #dce5da}.ls-points small{display:block;font-size:12px;color:#50665a}.ls-point-actions{display:flex;flex-wrap:wrap;gap:4px}.ls-point-actions button{padding:6px 9px;min-height:38px;font-size:13px}#diagram{display:block;width:100%;height:auto;background:#f5f8f2;border:1px solid #dce5da;border-radius:12px;margin:12px 0}.ls-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ls-stats>div{border-radius:12px;background:#f0f5ee;padding:12px}.ls-stats small,.ls-stats span{display:block;color:#50665a;font-size:12px}.ls-stats strong{display:block;font-size:clamp(20px,4vw,28px);font-variant-numeric:tabular-nums;color:#236348}#map-link{display:inline-block;margin-bottom:16px}#quality{margin-bottom:10px}@media(max-width:760px){.ls-grid{grid-template-columns:1fr}.ls-card{padding:15px}.ls-header{font-size:13px}.ls-fields{grid-template-columns:1fr}.ls-point-actions{max-width:150px}}
+:root{font:16px/1.5 system-ui,sans-serif;color:#203a2e;background:#f3f6ef}*{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}button,input{font:inherit}button{border:1px solid #236348;border-radius:10px;background:#236348;color:white;padding:10px 14px;cursor:pointer;font-weight:650;min-height:44px}button.secondary{background:#fff;color:#236348;border-color:#cedbce}button:disabled{opacity:.5;cursor:default}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #3889b3;outline-offset:3px}a{color:#236348;font-weight:650}.ls-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #dce5da;padding:16px max(16px,calc((100vw - 1160px)/2))}.ls-header strong{letter-spacing:.08em}.ls-header small{display:block;font-weight:400;letter-spacing:0}.ls-header span,.eyebrow{font-size:12px;font-weight:700;color:#52745f}.ls-shell{max-width:1200px;margin:auto;padding:24px 16px 48px}.ls-intro{max-width:740px;margin-bottom:24px}h1{font-size:clamp(32px,6vw,48px);letter-spacing:-.04em;line-height:1.1;margin:6px 0 12px}h2{font-size:20px;margin:0 0 12px}p{margin:8px 0}.ls-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.ls-card{padding:20px;border:1px solid #dce5da;background:white;border-radius:20px;min-width:0}.ls-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.ls-note{font-size:13px;color:#50665a}.ls-status{font-size:14px;color:#365847;background:#edf4eb;border-radius:9px;padding:10px;overflow-wrap:anywhere}.ls-status:empty{display:none}details{border-top:1px solid #dce5da;padding-top:12px;margin-top:12px}summary{cursor:pointer;font-weight:650}.ls-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}label{display:block;font-size:13px;font-weight:650}input{width:100%;min-width:0;padding:10px;border:1px solid #cedbce;border-radius:8px;margin-top:4px;color:#203a2e;background:#fff}.ls-points{list-style:none;padding:0;margin:0}.ls-points li{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 0;border-top:1px solid #dce5da}.ls-points small{display:block;font-size:12px;color:#50665a}.ls-point-actions{display:flex;flex-wrap:wrap;gap:4px}.ls-point-actions button{padding:6px 9px;min-height:38px;font-size:13px}#diagram{display:block;width:100%;height:auto;background:#f5f8f2;border:1px solid #dce5da;border-radius:12px;margin:12px 0}.ls-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ls-stats>div{border-radius:12px;background:#f0f5ee;padding:12px}.ls-stats small,.ls-stats span{display:block;color:#50665a;font-size:12px}.ls-stats strong{display:block;font-size:clamp(20px,4vw,28px);font-variant-numeric:tabular-nums;color:#236348}#map-link{display:inline-block;margin-bottom:16px}#quality{margin-bottom:10px}@media(max-width:760px){.ls-grid{grid-template-columns:1fr}.ls-card{padding:15px}.ls-header{font-size:13px}.ls-fields{grid-template-columns:1fr}.ls-point-actions{max-width:150px}}
 #land-type{width:100%;font:inherit;padding:10px;margin:4px 0 8px;border:1px solid #cedbce;border-radius:8px;color:#203a2e;background:#fff}
 
+.ls-camera {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: #111c17;
+  color: white;
+}
+.ls-camera::backdrop { background: #111c17; }
+.ls-camera video,
 .ls-camera-overlay {
   position: absolute;
   inset: 0;
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
 }
-.ls-camera-marker,
+.ls-camera video { object-fit: cover; }
+.ls-camera-overlay,
+.ls-camera-reticle { pointer-events: none; }
+.ls-camera-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border: 2px solid #eaffec;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #0008;
+}
+.ls-camera-header,
+.ls-camera-footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+}
+.ls-camera-header {
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: 16px;
+  background: linear-gradient(#101913ef, transparent);
+}
+.ls-camera-header h2 { margin: 0; }
+.ls-camera-header span { font-size: 13px; }
+.ls-camera-footer {
+  bottom: 0;
+  display: grid;
+  gap: 8px;
+  padding-top: 24px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, #101913f5 30%);
+}
+.ls-camera-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ls-camera-actions button { flex: 1 0 auto; }
+.ls-camera button {
+  background: #182b23ec;
+  border-color: #ffffff63;
+}
+.ls-camera #camera-add {
+  background: #d4ffa6;
+  border-color: #d4ffa6;
+  color: #162b1e;
+}
+.ls-camera-overlay-toggle { justify-self: start; }
+.ls-camera-status,
+.ls-camera-direction {
+  font-size: 13px;
+  font-weight: 650;
+}
+.ls-camera-status { margin: 0; }
 .ls-camera-direction {
   position: absolute;
+  top: calc(max(12px, env(safe-area-inset-top)) + 62px);
+  left: 50%;
+  width: max-content;
+  max-width: 90%;
   margin: 0;
-  border-radius: 7px;
-  padding: 4px 7px;
-  color: white;
-  background: #123826ef;
-  font-size: 11px;
-  font-weight: 700;
+  padding: 5px 10px;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: #182b23ec;
+  text-align: center;
 }
 .ls-camera-marker {
-  top: 37%;
-  transform: translate(-50%, -50%);
-  outline: 1px solid #adf2bf;
+  position: absolute;
+  top: 46%;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: 29%;
+  transform: translate(-50%, -100%);
   text-align: center;
-  max-width: 27%;
 }
-.ls-camera-direction {
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  text-align: center;
+.ls-camera-pin {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: #d4ffa6;
+  color: #162b1e;
+  font-weight: 800;
+  box-shadow: 0 2px 10px #0009;
+}
+.ls-camera-marker[data-state="direction"]::after {
+  content: '';
+  width: 2px;
+  height: 18px;
+  background: #d4ffa6;
+  box-shadow: 0 1px 3px #000;
+}
+.ls-camera-pin-label {
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #182b23ec;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ls-camera-marker[data-state="nearby"] {
+  top: 57%;
+  transform: translateX(-50%);
+}
+.ls-camera-marker[data-state="capture"] {
+  z-index: 1;
+  top: 48%;
+}
+@media (max-height: 500px) {
+  .ls-camera-footer {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+  .ls-camera-status { grid-column: 1 / -1; }
+  .ls-camera-actions { justify-self: end; }
 }
