@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { projectStakeMarkers, rearCameraAxes } from '../src/land-camera-bearing.js';
+import { projectStakeMarkers, rearCameraAxes, steadyCameraAxes, steadyCameraFix } from '../src/land-camera-bearing.js';
 
 const north = { absolute: true, alpha: 0, beta: 90, gamma: 0 };
 const view = { width: 390, height: 844, videoWidth: 720, videoHeight: 1280, screenAngle: 0 };
@@ -44,4 +44,21 @@ test('corrects the camera axes when the display rotates to landscape', () => {
   const [corrected] = projectStakeMarkers(position, points, rotated, { ...landscape, screenAngle: 90 }).visible;
   assert.ok(Math.abs(corrected.x - upright.x) < 1e-10);
   assert.ok(Math.abs(corrected.y - upright.y) < 1e-10);
+});
+
+test('filters small GPS fluctuations but allows walking and recovery from a poor fix', () => {
+  const before = { ...position, accuracy: 4, at: 1000 };
+  const jitter = { ...before, lon: 0.000006, at: 2000 };
+  const walked = { ...jitter, lon: 0.0001 };
+  assert.deepEqual(steadyCameraFix(before, jitter), { ...jitter, lon: before.lon });
+  assert.equal(steadyCameraFix(before, walked), walked);
+  assert.equal(steadyCameraFix({ ...before, accuracy: 30 }, jitter), jitter);
+});
+
+test('holds minor compass noise and accepts a deliberate camera turn', () => {
+  const before = rearCameraAxes(north);
+  const jitter = rearCameraAxes({ ...north, alpha: 359.6 });
+  const turn = rearCameraAxes({ ...north, alpha: 355 });
+  assert.equal(steadyCameraAxes(before, jitter), before);
+  assert.equal(steadyCameraAxes(before, turn), turn);
 });

@@ -131,14 +131,6 @@
   font-size: 12px;
   font-weight: 700;
 }
-.ls-camera-marker[data-state="nearby"] {
-  top: 57%;
-  transform: translateX(-50%);
-}
-.ls-camera-marker[data-state="capture"] {
-  z-index: 1;
-  top: 48%;
-}
 @media (max-height: 500px) {
   .ls-camera-footer {
     grid-template-columns: auto 1fr;

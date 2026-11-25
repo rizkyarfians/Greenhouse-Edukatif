@@ -3,7 +3,6 @@ import {
   PerspectiveCamera, Scene, Vector3, WebGLRenderer,
 } from 'three';
 
-const stakeHeight = 1.15;
 const vertical = new Vector3(0, 1, 0);
 
 export function createStakeModelLayer(container) {
@@ -33,7 +32,7 @@ export function createStakeModelLayer(container) {
     { geometry: new CylinderGeometry(0.22, 0.22, 0.12, 6), material: white, height: 0.85 },
     { geometry: new CylinderGeometry(0.12, 0.24, 0.18, 6), material: green, height: 1.06 },
   ];
-  const stakes = Array.from({ length: 5 }, () => {
+  const stakes = Array.from({ length: 3 }, () => {
     const stake = new Group();
     for (const { geometry, material, height } of parts) {
       const mesh = new Mesh(geometry, material);
@@ -55,7 +54,7 @@ export function createStakeModelLayer(container) {
 
   function draw(markers, view) {
     // Clearing via visibility avoids redrawing a transparent frame when no stakes are visible.
-    canvas.hidden = contextLost || !markers.length || !view.width || !view.height;
+    canvas.hidden = contextLost || !markers.length || !view.width || !view.height || !view.up;
     if (canvas.hidden) return false;
 
     if (width !== view.width || height !== view.height) {
@@ -76,13 +75,10 @@ export function createStakeModelLayer(container) {
       stake.visible = !!marker;
       if (!marker) continue;
 
-      const depth = marker.depth ?? focal * stakeHeight / 86;
-      const heightInPixels = focal * stakeHeight / depth;
-      const scale = Math.min(130, Math.max(46, heightInPixels)) / heightInPixels;
+      const depth = marker.depth;
       stake.position.set((marker.x - 0.5) * width * depth / focal,
         (0.5 - marker.y) * height * depth / focal, -depth);
-      stake.scale.setScalar(scale);
-      worldUp.set(...(marker.depth && view.up ? view.up : [0, 1, 0]));
+      worldUp.set(...view.up);
       stake.quaternion.setFromUnitVectors(vertical, worldUp.normalize());
     }
 

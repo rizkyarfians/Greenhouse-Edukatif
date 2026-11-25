@@ -37,6 +37,23 @@ function groundOffset(origin, target) {
 
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
+export function steadyCameraAxes(previous, next) {
+  if (!previous || !next) return next;
+  const threshold = Math.cos(0.65 * radians);
+  return dot(previous.right, next.right) > threshold &&
+    dot(previous.up, next.up) > threshold &&
+    dot(previous.forward, next.forward) > threshold ? previous : next;
+}
+
+export function steadyCameraFix(previous, next) {
+  if (!previous || next.at - previous.at > 15_000 ||
+      (previous.accuracy > 20 && next.accuracy <= 20)) return next;
+
+  const deadband = Math.min(2, Math.max(0.5, Math.min(previous.accuracy, next.accuracy) / 2));
+  if (groundOffset(previous, next).distance >= deadband) return next;
+  return { ...next, lat: previous.lat, lon: previous.lon };
+}
+
 export function projectStakeMarkers(position, points, axes, view) {
   const candidates = [];
   let nearby = null;

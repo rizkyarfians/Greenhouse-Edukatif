@@ -1,4 +1,4 @@
-import { projectStakeMarkers, rearCameraAxes } from './land-camera-bearing.js';
+import { projectStakeMarkers, rearCameraAxes, steadyCameraAxes, steadyCameraFix } from './land-camera-bearing.js';
 
 export function createCameraOverlay({ button, overlay, markers, models, message, savedStake, camera, getPoints }) {
   let watch = null;
@@ -9,15 +9,13 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
   let gpsError = null;
   let compassPermission = null;
   let openedAt = 0;
-  let capture = null;
   let modelLayer = null;
-  let captureTimer = null;
   const nodes = new Map();
 
   function onOrientation(event) {
     if (!event.absolute) return;
     const axes = rearCameraAxes(event);
-    orientationReading = { axes };
+    orientationReading = { axes: steadyCameraAxes(orientationReading?.axes, axes) };
     if (axes) button.hidden = true;
   }
 
@@ -46,7 +44,7 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     }
 
     if (!points.length) label = 'Tambah patok GPS untuk memunculkan pin.';
-    else if (nearby) label = 'Menjauh dari patok, lalu arahkan kamera kembali ke titiknya.';
+
     else if (gpsError === 1) label = 'Izin GPS ditolak. Izinkan lokasi di Chrome.';
     else if (!freshPosition) label = gpsError ? 'GPS belum dapat posisi. Coba di area terbuka.' : 'Menunggu posisi GPS…';
     else if (position.accuracy > 20) label = `Akurasi GPS ±${Math.round(position.accuracy)} m. Tunggu sampai ≤20 m.`;
@@ -55,44 +53,33 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     else if (!orientationReading?.axes) label = now - openedAt < 5000
       ? 'Menunggu kompas. Gerakkan HP perlahan.'
       : 'Kompas tidak mengirim arah. Cek izin sensor gerak di Chrome.';
-    else if (visible.length) label = 'Pin GPS · posisi perkiraan';
+    else if (visible.length) label = 'Patok 3D · posisi perkiraan GPS';
+    else if (nearby) label = 'Terlalu dekat untuk menentukan arah. Menjauh, lalu bidik balik.';
     else label = 'Patok di luar gambar. Arahkan kamera ke lokasi patok.';
 
-    const savedText = points.length ? `◆ Patok ${points.length} terekam` : '';
-    savedStake.hidden = !savedText || capture !== null || !!nearby ||
-      visible.some(marker => marker.number === points.length);
+    const savedText = nearby ? `◆ Dekat Patok ${nearby.number}` :
+      points.length ? `◆ Patok ${points.length} terekam` : '';
+    savedStake.hidden = !savedText || (!nearby && visible.some(marker => marker.number === points.length));
     if (savedStake.textContent !== savedText) savedStake.textContent = savedText;
 
     if (message.textContent !== label) message.textContent = label;
-    const displayed = visible.filter(marker => marker.number !== capture).map(marker => ({
-      ...marker,
-      text: `Patok ${marker.number} · ≈${Math.round(marker.distance)} m`,
-      state: 'direction',
-    }));
-    if (nearby && nearby.number !== capture) {
-      displayed.push({ number: nearby.number, x: 0.5, y: 0.57, text: `Dekat Patok ${nearby.number}`, state: 'nearby' });
-    }
-    if (capture !== null) {
-      displayed.push({ number: capture, x: 0.5, y: 0.48, text: `Patok ${capture} tersimpan`, state: 'capture' });
-    }
-
-    const keys = new Set(displayed.map(marker => `${marker.state}-${marker.number}`));
+    const keys = new Set(visible.map(marker => marker.number));
     for (const [key, node] of nodes) {
       if (keys.has(key)) continue;
       node.remove();
       nodes.delete(key);
     }
 
-    for (const { number, x, y, text, state } of displayed) {
-      const key = `${state}-${number}`;
+    for (const { number: key, x, y, distance } of visible) {
+      const text = `Patok ${key} · ≈${Math.round(distance)} m`;
       let node = nodes.get(key);
       if (!node) {
         node = document.createElement('div');
         node.className = 'ls-camera-marker';
-        node.dataset.state = state;
+        node.dataset.state = 'direction';
         const pin = document.createElement('span');
         pin.className = 'ls-camera-pin';
-        pin.textContent = number;
+        pin.textContent = key;
         pin.setAttribute('aria-hidden', 'true');
         const label = document.createElement('span');
         label.className = 'ls-camera-pin-label';
@@ -106,38 +93,27 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
       node.style.top = `${y * 100}%`;
     }
 
-    const drewModels = modelLayer?.draw(displayed, modelView) ?? false;
+    const drewModels = modelLayer?.draw(visible, modelView) ?? false;
     overlay.classList.toggle('has-stake-models', drewModels);
-  }
-
-  function clearCapture() {
-    clearTimeout(captureTimer);
-    captureTimer = capture = null;
-    if (!overlay.hidden) render();
   }
 
   function updatePosition(fix) {
     const { latitude: lat, longitude: lon, accuracy } = fix.coords;
     if (![lat, lon, accuracy, fix.timestamp].every(Number.isFinite) || accuracy < 0) return;
     if (position && fix.timestamp < position.at) return;
-    position = { lat, lon, accuracy, at: fix.timestamp };
+    position = steadyCameraFix(position, { lat, lon, accuracy, at: fix.timestamp });
     gpsError = null;
   }
 
-  function showCapture(number, fix) {
-    clearTimeout(captureTimer);
+  function usePositionFix(fix) {
     updatePosition(fix);
-    capture = number;
     render();
-    captureTimer = setTimeout(clearCapture, 1800);
   }
 
   function stop() {
     session++;
     if (watch !== null) navigator.geolocation.clearWatch(watch);
     clearInterval(timer);
-    clearTimeout(captureTimer);
-    captureTimer = capture = null;
     window.removeEventListener('deviceorientationabsolute', onOrientation);
     window.removeEventListener('deviceorientation', onOrientation);
     watch = timer = position = orientationReading = null;
@@ -197,5 +173,5 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     render();
   }
 
-  return { stop, startAutomatically, showCapture, clearCapture };
+  return { stop, startAutomatically, usePositionFix };
 }
