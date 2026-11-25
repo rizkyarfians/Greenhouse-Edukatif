@@ -58,3 +58,30 @@ Untuk sementara main adalah satu-satunya branch pengembangan aktif. Semua fitur 
 ## Backend engineering guideline
 
 Acuan arsitektur dan acceptance gate backend: [Automotion Server Architecture & Engineering Guideline](docs/SERVER_ARCHITECTURE_GUIDELINE.md). Rancangan ini bersifat proposed; belum ada backend production atau deployment. Seluruh pengembangan tetap di main.
+
+## Backend lokal · B01 Foundation
+
+Butuh Node.js 24 dan Docker Compose v2. Dari root repo, salin `.env.example` ke `.env` (`copy .env.example .env` di Windows CMD atau `cp .env.example .env` di Bash). Konfigurasi contoh untuk development lokal.
+
+```sh
+npm --prefix server ci
+docker compose --env-file .env -f infrastructure/compose.yaml up -d --wait db
+npm --prefix server run db:migrate
+npm --prefix server start
+```
+
+API tersedia di `http://127.0.0.1:3001`. Cek alamat ini lewat browser atau `curl` (`curl.exe` di Windows).
+
+| Endpoint | Hasil |
+|---|---|
+| `/health/live` | HTTP 200 saat proses API berjalan. |
+| `/health/ready` | HTTP 200 saat PostGIS bisa diakses, atau 503 saat koneksi atau pemeriksaan PostGIS gagal. |
+
+PostgreSQL hanya dibuka di loopback pada port 5433. Jika port bentrok, ubah `POSTGRES_HOST_PORT` dan port pada `DATABASE_URL` di `.env`. Untuk mode watch gunakan `npm --prefix server run dev`. Frontend masih dijalankan lewat `npm run dev` dari root.
+
+```sh
+npm --prefix server test
+npm --prefix server run test:integration
+```
+
+Tes integrasi memakai database pengembangan dari `.env` dan menjalankan migrasi. Untuk menghentikan database dengan volume data tetap tersimpan, jalankan `docker compose --env-file .env -f infrastructure/compose.yaml down`.

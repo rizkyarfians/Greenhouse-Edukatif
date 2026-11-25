@@ -1,0 +1,20 @@
+{
+  "name": "automotion-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=../.env --watch src/index.js",
+    "start": "node --env-file-if-exists=../.env src/index.js",
+    "db:migrate": "node --env-file-if-exists=../.env src/migrate.js",
+    "test": "node --test tests/health.test.js",
+    "test:integration": "node --env-file-if-exists=../.env --test tests/database.integration.js"
+  },
+  "dependencies": {
+    "fastify": "5.12.8",
+    "pg": "8.23.1"
+  }
+}

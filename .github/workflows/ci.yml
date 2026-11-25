@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: node --test tests/*.test.js
+      - run: npm run build
+      - run: npm --prefix server ci
+      - run: npm --prefix server test
+      - name: Start PostgreSQL and PostGIS
+        run: |
+          cp .env.example .env
+          docker compose --env-file .env -f infrastructure/compose.yaml up -d --wait db
+      - run: npm --prefix server run db:migrate
+      - run: npm --prefix server run test:integration
+      - name: Database logs on failure
+        if: failure()
+        run: docker compose --env-file .env -f infrastructure/compose.yaml logs db
