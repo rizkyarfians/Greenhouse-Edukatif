@@ -57,4 +57,4 @@ Untuk sementara main adalah satu-satunya branch pengembangan aktif. Semua fitur 
 
 ## Backend engineering guideline
 
-Acuan arsitektur dan acceptance gate backend: [Automotion Server Architecture & Engineering Guideline v1.0](docs/SERVER_ARCHITECTURE_GUIDELINE.md). Rancangan ini bersifat proposed; belum ada backend production atau deployment. Seluruh pengembangan tetap di main.
+Acuan arsitektur dan acceptance gate backend: [Automotion Server Architecture & Engineering Guideline](docs/SERVER_ARCHITECTURE_GUIDELINE.md). Rancangan ini bersifat proposed; belum ada backend production atau deployment. Seluruh pengembangan tetap di main.
