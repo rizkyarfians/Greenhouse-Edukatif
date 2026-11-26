@@ -25,10 +25,10 @@ const metrics = [
   {key:'water', title:'Tandon air', value:78, unit:'%', note:'Air untuk menyiram', tone:'water', icon:'tank'},
   {key:'nutrient', title:'Tandon nutrisi', value:64, unit:'%', note:'Sisa larutan nutrisi', tone:'food', icon:'food'},
 ];
-get('metrics').innerHTML = metrics.map(({key,title,unit,note,tone,icon}) => `
+get('metrics').innerHTML = metrics.map(({key,title,unit,tone,icon}) => `
   <article class="metric ${tone}"><span class="tile-icon" data-icon="${icon}"></span>
     <h3>${title}</h3><p class="metric-value"><span id="${key}-value"></span><small>${unit}</small></p>
-    <p class="metric-note">${note}</p><button class="device-trigger" data-metric="${key}" type="button" aria-label="Detail sensor ${title}" aria-haspopup="dialog"></button>${unit === '%' ? `<div class="bar" aria-hidden="true"><span id="${key}-bar"></span></div>` : ''}
+    <button class="device-trigger" data-metric="${key}" type="button" aria-label="Detail sensor ${title}" aria-haspopup="dialog"></button>${unit === '%' ? `<div class="bar" aria-hidden="true"><span id="${key}-bar"></span></div>` : ''}
   </article>`).join('');
 for (const element of document.querySelectorAll('#greenhouse-dashboard [data-icon]')) {
   element.innerHTML = icons[element.dataset.icon];

@@ -13,13 +13,13 @@ const landTypes = {
   greenhouse: {
     label: 'Greenhouse Melon',
     defaultName: 'Kebun Melon',
-    description: 'Pantau Zona A dan B, lalu coba irigasi tetes untuk tanaman melon.',
+    scanType: 'greenhouse',
     load: () => import('./simulation.js'),
   },
   rice: {
     label: 'Lahan Terbuka Padi',
     defaultName: 'Sawah Padi',
-    description: 'Amati tanaman padi dan perubahan genangan saat air dialirkan atau dikuras.',
+    scanType: 'open-field',
     load: () => import('./rice-field.js'),
   },
 };
@@ -117,7 +117,6 @@ async function openProject(project) {
   simulation = undefined;
   const landType = landTypes[project.type];
   get('simulation-title').textContent = project.name;
-  get('simulation-description').textContent = landType.description;
   get('greenhouse-dashboard').hidden = project.type !== 'greenhouse';
   get('rice-dashboard').hidden = project.type !== 'rice';
   home.hidden = true;
@@ -138,11 +137,15 @@ async function openProject(project) {
   }
 }
 
-for (const input of landInputs) {
-  input.addEventListener('change', () => {
-    projectName.placeholder = landTypes[selectedLandType()].defaultName;
-  });
+function updateLandActions() {
+  const type = landTypes[selectedLandType()];
+  projectName.placeholder = type.defaultName;
+  get('scan-selected-land').href = './scan.html?type=' + type.scanType;
 }
+
+for (const input of landInputs) input.addEventListener('change', updateLandActions);
+window.addEventListener('pageshow', updateLandActions);
+updateLandActions();
 
 get('start-simulation').addEventListener('submit', event => {
   event.preventDefault();
