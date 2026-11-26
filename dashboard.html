@@ -36,13 +36,17 @@
             <legend class="visually-hidden">Jenis lahan</legend>
             <label class="land-option">
               <input type="radio" name="land-type" value="greenhouse" checked>
-              <span class="land-card"><span class="land-icon" data-land-icon="greenhouse" aria-hidden="true"></span><span><strong>Greenhouse</strong><small>Simulasi kebun melon</small></span></span>
+              <span class="land-card"><span class="land-icon" data-land-icon="greenhouse" aria-hidden="true"></span><span><strong>Greenhouse</strong><small>Budidaya terlindung</small></span></span>
             </label>
             <label class="land-option">
               <input type="radio" name="land-type" value="rice">
-              <span class="land-card"><span class="land-icon" data-land-icon="rice" aria-hidden="true"></span><span><strong>Lahan terbuka</strong><small>Simulasi sawah padi</small></span></span>
+              <span class="land-card"><span class="land-icon" data-land-icon="rice" aria-hidden="true"></span><span><strong>Lahan terbuka</strong><small>Budidaya di luar ruang</small></span></span>
             </label>
           </fieldset>
+          <label for="simulation-crop">Tanaman</label>
+          <select id="simulation-crop" name="crop" class="crop-select">
+            <option value="">Melon</option>
+          </select>
           <a id="scan-selected-land" class="primary-button" href="./scan.html?type=greenhouse">Scan lahan <span aria-hidden="true">→</span></a>
           <button class="secondary-button start-button" type="submit">Mulai simulasi 3D</button>
           <details class="simulation-options">
@@ -71,6 +75,19 @@
       <p id="save-message" role="status"></p>
     </div>
   </div>
+  <section class="stage panel crop-stage" id="crop-dashboard" aria-labelledby="crop-view-title" hidden>
+    <div class="section-head">
+      <div>
+        <h2 id="crop-view-title">Tanaman 3D</h2>
+        <p id="crop-view-caption"></p>
+      </div>
+    </div>
+    <div class="viewport" id="crop-viewport"></div>
+    <div class="viewer-bar">
+      <span>Geser untuk memutar · Cubit atau gulir untuk zoom</span>
+      <button type="button" id="reset-crop-view">Atur ulang</button>
+    </div>
+  </section>
   <div class="dashboard" id="greenhouse-dashboard" hidden>
     <section class="stage panel" aria-labelledby="view-title">
       <div class="section-head"><h2 id="view-title">Greenhouse 3D</h2></div>

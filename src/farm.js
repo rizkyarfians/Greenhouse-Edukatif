@@ -6,6 +6,8 @@ import {measure} from './land-geometry.js';
 import {allCrops} from './crop-database.js';
 import {landType,cropChoices,sameLandType} from './land-type.js';
 import {makeLayout} from './farm-layout.js';
+import {detailedCrops} from './detailed-crops.js';
+import {createCropGeometry,createCropMaterial} from './crop-models.js';
 const $=id=>document.getElementById(id),key='automotion.farm.v1';
 const fmt=(v,d=1)=>Number.isFinite(v)?v.toLocaleString('id-ID',{maximumFractionDigits:d}):'—';
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch{return null;}};
@@ -57,10 +59,23 @@ function initViewer(container,l){
  const parts={A:[],B:[]},waterLines={A:[],B:[]},markers=[],dummy=new THREE.Object3D();
  const baseSize=Math.max(.055,Math.min(.35,Math.min(...l.spacing)*scale*.42));
  const style={rice:[0x4c8838,.85,1],maize:[0x558b38,1.8,.8],soybean:[0x4f803d,.65,1.3],groundnut:[0x659341,.5,1.4],chili:[0x387c3e,1.2,1],tomato:[0x427e3c,1.2,1.25],cabbage:[0x76a459,.45,1.6],potato:[0x56833c,.65,1.3],cucumber:[0x4d8a46,.8,1.2],shallot:[0x6c9149,1.05,.65],melon:[0x659847,.9,1.4]}[crop.id];
+ const detailed=Object.hasOwn(detailedCrops,crop.id);
+ const plantGeometry=detailed?createCropGeometry(crop.id,{detail:false}):new THREE.ConeGeometry(1,2,5);
+ const plantColor=detailed?0xffffff:style[0];
  for(const z of ['A','B']){
   const pp=l.samples.filter(p=>p.zone===z);
-  const mat=new THREE.MeshStandardMaterial({color:style[0],roughness:.9}),geo=crop.id==='cabbage'?new THREE.SphereGeometry(1,7,5):new THREE.ConeGeometry(1,2,5);
-  const plants=new THREE.InstancedMesh(geo,mat,pp.length);for(let i=0;i<pp.length;i++){const p=pp[i],height=baseSize*style[1];dummy.position.copy(world(p.x,p.y,height));dummy.scale.set(baseSize*style[2],height,baseSize*style[2]);dummy.rotation.set(0,(i*2.399)%6.283,0);dummy.updateMatrix();plants.setMatrixAt(i,dummy.matrix);}plants.instanceMatrix.needsUpdate=true;scene.add(plants);parts[z].push({mesh:plants,color:style[0]});
+  const mat=detailed?createCropMaterial():new THREE.MeshStandardMaterial({color:plantColor,roughness:.9});
+  const plants=new THREE.InstancedMesh(plantGeometry,mat,pp.length);
+  for(let i=0;i<pp.length;i++){
+   const p=pp[i],height=baseSize*style[1];
+   dummy.position.copy(world(p.x,p.y,detailed?0:height));
+   if(detailed) dummy.scale.setScalar(baseSize*1.25);
+   else dummy.scale.set(baseSize*style[2],height,baseSize*style[2]);
+   dummy.rotation.set(0,crop.id==='cucumber'?0:(i*2.399)%6.283,0);
+   dummy.updateMatrix();
+   plants.setMatrixAt(i,dummy.matrix);
+  }
+  plants.instanceMatrix.needsUpdate=true;scene.add(plants);parts[z].push({mesh:plants,color:plantColor});
   for(const line of l.lines.filter(x=>x.zone===z)){const geom=new THREE.BufferGeometry().setFromPoints([world(line.x,line.from,.065),world(line.x,line.to,.065)]);const pipe=new THREE.Line(geom,new THREE.LineBasicMaterial({color:0x537c94,transparent:true,opacity:.45}));scene.add(pipe);waterLines[z].push(pipe);}
  }
  const colors={soil:0x37b8d9,valve:0xe0a74b,weather:0x5f86d5,pump:0x9f77cb,tank:0x447ca9};
@@ -80,7 +95,7 @@ function initViewer(container,l){
  renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);
  let frame=0,waterZone=null;
  function animate(t){if(!waterZone)return;for(const p of waterLines[waterZone])p.material.opacity=.65+.35*Math.sin(t/180);draw();frame=requestAnimationFrame(animate);}
- return {reset,toggleFrame(){frameGroup.visible=!frameGroup.visible;draw();return frameGroup.visible;},setZone(z){for(const k of ['A','B'])for(const p of parts[k]){p.mesh.material.color.setHex(p.color);if(z!=='all'&&z!==k)p.mesh.material.color.multiplyScalar(.42);p.mesh.material.emissive.setHex(z===k?0x4ea97a:0);p.mesh.material.emissiveIntensity=z===k?.2:0;}draw();},selectDevice(id){for(const p of markers){p.scale.setScalar(p.userData.device===id?1.5:1);p.material.emissiveIntensity=p.userData.device===id?.9:.15;}draw();},setWater(z){cancelAnimationFrame(frame);waterZone=z;for(const k of ['A','B'])for(const p of waterLines[k]){p.material.color.setHex(z===k?0x19bce9:0x537c94);p.material.opacity=z===k?1:.45;}draw();if(z)frame=requestAnimationFrame(animate);},dispose(){cancelAnimationFrame(frame);observer.disconnect();controls.dispose();scene.traverse(o=>{o.geometry?.dispose();if(o.material){for(const mat of Array.isArray(o.material)?o.material:[o.material])mat.dispose();}});renderer.dispose();renderer.domElement.remove();}};
+ return {reset,toggleFrame(){frameGroup.visible=!frameGroup.visible;draw();return frameGroup.visible;},setZone(z){for(const k of ['A','B'])for(const p of parts[k]){p.mesh.material.color.setHex(p.color);if(z!=='all'&&z!==k)p.mesh.material.color.multiplyScalar(.42);p.mesh.material.emissive.setHex(z===k?0x4ea97a:0);p.mesh.material.emissiveIntensity=z===k?.2:0;}draw();},selectDevice(id){for(const p of markers){p.scale.setScalar(p.userData.device===id?1.5:1);p.material.emissiveIntensity=p.userData.device===id?.9:.15;}draw();},setWater(z){cancelAnimationFrame(frame);waterZone=z;for(const k of ['A','B'])for(const p of waterLines[k]){p.material.color.setHex(z===k?0x19bce9:0x537c94);p.material.opacity=z===k?1:.45;}draw();if(z)frame=requestAnimationFrame(animate);},dispose(){cancelAnimationFrame(frame);observer.disconnect();controls.dispose();plantGeometry.dispose();scene.traverse(o=>{if(o.geometry!==plantGeometry)o.geometry?.dispose();if(o.material){for(const mat of Array.isArray(o.material)?o.material:[o.material])mat.dispose();}});renderer.dispose();renderer.domElement.remove();}};
 }
 function fallback(l){
  const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','0 0 400 300');svg.classList.add('farm-fallback');const k=Math.min(340/l.width,240/l.depth),p=(x,y)=>[200+x*k,150-y*k];

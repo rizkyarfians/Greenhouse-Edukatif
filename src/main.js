@@ -1,5 +1,7 @@
 import './style.css';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
+import {detailedCrops} from './detailed-crops.js';
+import {cropChoices} from './land-type.js';
 import greenhouseIcon from 'lucide-static/icons/house.svg?raw';
 
 const get = id => document.getElementById(id);
@@ -25,6 +27,10 @@ const landTypes = {
 };
 const landInputs = [...document.querySelectorAll('input[name=land-type]')];
 const projectName = get('project-name');
+const cropSelect = get('simulation-crop');
+const modelChoices = Object.entries(detailedCrops).map(([id, crop]) => ({...crop, id}));
+const availableCrops = type => cropChoices(modelChoices, landTypes[type].scanType);
+const supportsCrop = (type, id) => availableCrops(type).some(crop => crop.id === id);
 const storagePrefix = 'greenhouse-edukatif:guest:v1:';
 const dateFormat = new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
@@ -62,11 +68,13 @@ function validState(type, state) {
 function parseProject(json, key) {
   try {
     const project = JSON.parse(json);
-    const {id, name, updatedAt, state, type = 'greenhouse'} = project;
+    const {id, name, updatedAt, state, cropId, type = 'greenhouse'} = project;
     if (!/^[a-f0-9]{32}$/.test(id) || key !== storagePrefix + id ||
         typeof name !== 'string' || !name.trim() ||
         typeof updatedAt !== 'number' || !Number.isFinite(new Date(updatedAt).getTime())) return null;
-    if (!Object.hasOwn(landTypes, type) || !validState(type, state)) return null;
+    if (!Object.hasOwn(landTypes, type)) return null;
+    if (cropId === undefined ? !validState(type, state) :
+        !supportsCrop(type, cropId) || !state || typeof state !== 'object' || Array.isArray(state)) return null;
     return {...project, type};
   } catch {
     return null;
@@ -97,7 +105,10 @@ function renderSavedProjects() {
     name.textContent = project.name;
     const summary = document.createElement('p');
     const plot = project.type === 'greenhouse' ? `Zona ${project.state.zone}` : `Genangan ${project.state.waterDepth} cm`;
-    summary.textContent = `${landTypes[project.type].label} · ${plot} · Disimpan ${dateFormat.format(project.updatedAt)}`;
+    const label = project.cropId
+      ? `${project.type === 'greenhouse' ? 'Greenhouse' : 'Lahan terbuka'} · ${detailedCrops[project.cropId].name}`
+      : `${landTypes[project.type].label} · ${plot}`;
+    summary.textContent = `${label} · Disimpan ${dateFormat.format(project.updatedAt)}`;
     info.append(name, summary);
     const open = document.createElement('button');
     open.className = 'secondary-button';
@@ -117,17 +128,22 @@ async function openProject(project) {
   simulation = undefined;
   const landType = landTypes[project.type];
   get('simulation-title').textContent = project.name;
-  get('greenhouse-dashboard').hidden = project.type !== 'greenhouse';
-  get('rice-dashboard').hidden = project.type !== 'rice';
+  get('greenhouse-dashboard').hidden = Boolean(project.cropId) || project.type !== 'greenhouse';
+  get('rice-dashboard').hidden = Boolean(project.cropId) || project.type !== 'rice';
+  get('crop-dashboard').hidden = !project.cropId;
   home.hidden = true;
   simulationView.hidden = false;
   get('simulation-title').focus();
   window.scrollTo(0, 0);
   try {
-    const module = await landType.load();
+    const module = await (project.cropId ? import('./crop-preview.js') : landType.load());
     if (activeProject !== project) return;
-    simulation = module;
-    simulation.openSimulation(project.state);
+    if (project.cropId) {
+      simulation = module.openCropPreview(project.cropId);
+    } else {
+      simulation = module;
+      simulation.openSimulation(project.state);
+    }
     lastSavedState = JSON.stringify(simulation.snapshotSimulation());
     saveButton.disabled = false;
   } catch (error) {
@@ -137,24 +153,36 @@ async function openProject(project) {
   }
 }
 
+function defaultName(type, cropId) {
+  return cropId ? 'Kebun ' + detailedCrops[cropId].name : landTypes[type].defaultName;
+}
+
 function updateLandActions() {
-  const type = landTypes[selectedLandType()];
-  projectName.placeholder = type.defaultName;
-  get('scan-selected-land').href = './scan.html?type=' + type.scanType;
+  const type = selectedLandType();
+  const previous = cropSelect.value;
+  cropSelect.replaceChildren(new Option(type === 'greenhouse' ? 'Melon' : 'Padi', ''),
+    ...availableCrops(type).map(crop => new Option(crop.name, crop.id)));
+  cropSelect.value = supportsCrop(type, previous) ? previous : '';
+  projectName.placeholder = defaultName(type, cropSelect.value);
+  get('scan-selected-land').href = './scan.html?type=' + landTypes[type].scanType;
 }
 
 for (const input of landInputs) input.addEventListener('change', updateLandActions);
 window.addEventListener('pageshow', updateLandActions);
+cropSelect.addEventListener('change', () => {
+  projectName.placeholder = defaultName(selectedLandType(), cropSelect.value);
+});
 updateLandActions();
 
 get('start-simulation').addEventListener('submit', event => {
   event.preventDefault();
   const type = selectedLandType();
-  const name = projectName.value.trim() || landTypes[type].defaultName;
+  const cropId = cropSelect.value || undefined;
+  const name = projectName.value.trim() || defaultName(type, cropId);
   const id = Array.from(crypto.getRandomValues(new Uint32Array(4)), part =>
     part.toString(16).padStart(8, '0')).join('');
   projectName.value = '';
-  openProject({id, name, type});
+  openProject({id, name, type, cropId});
 });
 
 saveButton.addEventListener('click', () => {

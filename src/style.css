@@ -192,3 +192,18 @@ a:focus-visible, summary:focus-visible { outline: 3px solid #3889b3; outline-off
   .account-nav .demo { padding: 5px 8px; font-size: 12px; }
   .account-nav a { font-size: 14px; }
 }
+
+.crop-select {
+  width: 100%;
+  min-height: 42px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.crop-stage { margin-bottom: 32px; }
+.crop-stage .section-head p { margin-top: 4px; }

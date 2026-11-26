@@ -1,4 +1,4 @@
-import { Color, Matrix4 } from 'three';
+import { Color, DoubleSide, Matrix4 } from 'three';
 
 const textureColors = {
   Concrete: 0xa5a39a,
@@ -58,7 +58,17 @@ export function canvasRenderer(canvas) {
             const vx=world[c]-world[a],vy=world[c+1]-world[a+1],vz=world[c+2]-world[a+2];
             const nx=uy*vz-uz*vy, ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;
             const light=(nx*.38+ny*.83+nz*.41)/(Math.hypot(nx,ny,nz)||1);
-            faces.push({a,b,c,shade:Math.max(0,Math.min(7,Math.round(4+light*3)))});
+            const shade = Math.max(0,Math.min(7,Math.round(4+light*3)));
+            let vertexColor;
+            if (mesh.material.vertexColors && attributes.color) {
+              const color = attributes.color.array;
+              vertexColor = new Color().setRGB(
+                (color[a]+color[b]+color[c])/3,
+                (color[a+1]+color[b+1]+color[c+1])/3,
+                (color[a+2]+color[b+2]+color[c+2])/3,
+              ).multiplyScalar(.48+shade*.115).getStyle();
+            }
+            faces.push({a,b,c,shade,vertexColor});
           }
           entries.push({mesh,faces,world,screen:new Float32Array(world.length)});
         });
@@ -85,7 +95,7 @@ export function canvasRenderer(canvas) {
         if (mat.userData.zoneMuted && textureColor !== undefined) base.multiplyScalar(.52);
         if (mat.emissiveIntensity && mat.emissive.getHex()) base.lerp(mat.emissive,Math.min(.55,mat.emissiveIntensity*1.5));
         const colors=Array.from({length:8},(_,i)=>'#'+base.clone().multiplyScalar(.48+i*.115).getHexString());
-        for(const {a,b,c,shade} of faces) {
+        for(const {a,b,c,shade,vertexColor} of faces) {
           const za = screen[a+2], zb = screen[b+2], zc = screen[c+2];
           if (Math.max(za,zb,zc) < -1 || Math.min(za,zb,zc) > 1) continue;
           if (Math.max(screen[a],screen[b],screen[c]) < 0 ||
@@ -94,8 +104,8 @@ export function canvasRenderer(canvas) {
               Math.min(screen[a+1],screen[b+1],screen[c+1]) > height) continue;
           const area=(screen[b]-screen[a])*(screen[c+1]-screen[a+1])-(screen[b+1]-screen[a+1])*(screen[c]-screen[a]);
           if (Math.abs(area)<.11) continue;
-          if (area>0 && !mesh.name.endsWith('Foliage')) continue;
-          visible.push({screen,a,b,c,depth:groundDepth ?? (screen[a+2]+screen[b+2]+screen[c+2])/3,color:colors[shade],opacity:mat.opacity});
+          if (area>0 && !(vertexColor && mat.side === DoubleSide) && !mesh.name.endsWith('Foliage')) continue;
+          visible.push({screen,a,b,c,depth:groundDepth ?? (screen[a+2]+screen[b+2]+screen[c+2])/3,color:vertexColor ?? colors[shade],opacity:mat.opacity});
         }
       }
       visible.sort((a,b)=>b.depth-a.depth);
