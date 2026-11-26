@@ -57,30 +57,6 @@
 @media(max-width:680px){.viewport:has(.zone-card:not([hidden])){height:485px}.zone-card{top:auto;bottom:52px;width:min(260px,calc(100% - 28px));padding:7px 9px}.zone-stats{grid-template-columns:1fr 1fr;gap:2px 8px}.zone-stats dt,.zone-stats dd{font-size:11px}.zone-card-head h3{font-size:16px}.zone-simulation{margin-top:5px}}
 .zone-label{position:absolute;z-index:1;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #b7cbb7;border-radius:7px;background:#f9fcf5;color:#385841;font-size:12px;font-weight:800;line-height:1.2;white-space:nowrap;box-shadow:0 2px 8px #1b472521}.zone-label[aria-pressed=true]{color:#164629;background:#e4fbdc;border-color:#79bd80}.zone-label[hidden]{display:none}
 
-.guest-home {
-  max-width: 1160px;
-  margin: auto;
-  padding: clamp(22px, 4vw, 52px) 0;
-}
-.home-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(285px, 1fr);
-  align-items: center;
-  gap: clamp(20px, 4vw, 56px);
-}
-.home-preview { min-width: 0; }
-.plot-preview { margin: 12px 0 0; }
-.plot-preview img {
-  display: block;
-  width: 100%;
-  height: clamp(250px, 38vw, 410px);
-  object-fit: contain;
-}
-.plot-preview figcaption {
-  color: var(--muted);
-  font-size: 13px;
-  text-align: center;
-}
 .home-copy { padding: clamp(20px, 3vw, 32px); }
 .home-copy h2 { font-size: clamp(23px, 3vw, 29px); }
 .start-simulation { margin-top: 14px; font-size: 14px; }
@@ -100,20 +76,6 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   font: inherit;
-}
-.plan-link { display: inline-block; margin-top: 15px; color: var(--green); font-size: 14px; }
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-@media (max-width: 650px) {
-  .home-hero { grid-template-columns: 1fr; gap: 18px; }
-  .plot-preview { margin-top: 0; }
-  .plot-preview img { height: clamp(155px, 50vw, 265px); }
 }
 .start-simulation label{display:block;margin-bottom:6px;font-weight:700}
 .primary-button,.secondary-button{padding:9px 15px;border-radius:10px;min-height:42px;font-size:14px;font-weight:800;white-space:nowrap}

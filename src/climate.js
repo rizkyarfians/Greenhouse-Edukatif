@@ -1,7 +1,9 @@
 import {loadLand} from './land-storage.js';
 import {storageError} from './account-storage-api.js';
 import './land-scanner.css';
+import './workspace-theme.css';
 import './climate.css';
+import './workflow-theme.css';
 import {measure} from './land-geometry.js';
 import {landType} from './land-type.js';
 import {shiftDate,summarizeDaily,seasonalBaseline} from './climate-core.js';

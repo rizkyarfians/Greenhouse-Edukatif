@@ -1,4 +1,8 @@
+import './workspace-theme.css';
 import './login.css';
+import sprout from 'lucide-static/icons/sprout.svg?raw';
+
+document.getElementById('login-brand-icon').innerHTML = sprout;
 import { firebaseConfigured, firebaseConfigIssue, loadFirebaseAuth } from './firebase-auth.js';
 
 const button = document.getElementById('google-login');

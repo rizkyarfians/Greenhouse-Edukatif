@@ -1,0 +1,34 @@
+:root {
+  --app-bg: #f1f3ed;
+  --app-surface: #fdfefa;
+  --app-ink: #202b23;
+  --app-muted: #546358;
+  --app-border: #dce2d7;
+  --app-dark: #25352a;
+  --app-lime: #d9ed9f;
+  --app-sage: #e8eee1;
+  background: var(--app-bg);
+  color: var(--app-ink);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.model-stage {
+  background:
+    radial-gradient(ellipse at 48% 48%, #718372, transparent 65%),
+    linear-gradient(148deg, #36483b, #26372c);
+  color: #f5f7ef;
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+}
+
+.model-stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(#edf9df35 1px, transparent 1.3px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(transparent, black 65%, transparent);
+  content: '';
+  pointer-events: none;
+}

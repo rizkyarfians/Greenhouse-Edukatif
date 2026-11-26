@@ -1,7 +1,9 @@
 import {loadLand} from './land-storage.js';
 import {storageError} from './account-storage-api.js';
 import './land-scanner.css';
+import './workspace-theme.css';
 import './recommendation.css';
+import './workflow-theme.css';
 import {measure} from './land-geometry.js';
 import {allCrops,modelVersion} from './crop-database.js';
 import {landType,cropChoices,climateForType,sameLandType} from './land-type.js';

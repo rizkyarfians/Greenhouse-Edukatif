@@ -1,10 +1,19 @@
 import './style.css';
+import './workspace-theme.css';
+import './dashboard-workspace.css';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
 import {detailedCrops} from './detailed-crops.js';
 import {cropChoices} from './land-type.js';
 import {dashboardAccount} from './dashboard-account.js';
 import {accountSimulationStore, storageError} from './account-storage-api.js';
 import {browserSimulationStore, storagePrefix} from './simulation-storage.js';
+import dashboardIcon from 'lucide-static/icons/layout-dashboard.svg?raw';
+import scanIcon from 'lucide-static/icons/scan-line.svg?raw';
+import folderIcon from 'lucide-static/icons/folder.svg?raw';
+import boxIcon from 'lucide-static/icons/box.svg?raw';
+import mapIcon from 'lucide-static/icons/map.svg?raw';
+import chevronLeft from 'lucide-static/icons/chevron-left.svg?raw';
+import saveIcon from 'lucide-static/icons/save.svg?raw';
 import greenhouseIcon from 'lucide-static/icons/house.svg?raw';
 
 const get = id => document.getElementById(id);
@@ -66,6 +75,25 @@ document.querySelector('.brand-icon').innerHTML = sprout;
 document.querySelector('.brand-icon').setAttribute('aria-hidden', 'true');
 document.querySelector('[data-land-icon=greenhouse]').innerHTML = greenhouseIcon;
 document.querySelector('[data-land-icon=rice]').innerHTML = sprout;
+
+const workspaceIcons = {
+  'layout-dashboard': dashboardIcon, 'scan-line': scanIcon, folder: folderIcon,
+  box: boxIcon, map: mapIcon, 'chevron-left': chevronLeft, save: saveIcon,
+};
+for (const icon of document.querySelectorAll('[data-workspace-icon]')) {
+  icon.innerHTML = workspaceIcons[icon.dataset.workspaceIcon];
+}
+
+const homeLinks = [...document.querySelectorAll('.home-nav a[href^="#"]')];
+function updateHomeNavigation() {
+  const active = location.hash === '#saved-title' ? '#saved-title' : '#home-title';
+  for (const link of homeLinks) {
+    if (link.hash === active) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  }
+}
+window.addEventListener('hashchange', updateHomeNavigation);
+updateHomeNavigation();
 
 function selectedLandType() {
   return landInputs.find(input => input.checked).value;
@@ -161,7 +189,9 @@ function updateLandActions() {
     ...availableCrops(type).map(crop => new Option(crop.name, crop.id)));
   cropSelect.value = supportsCrop(type, previous) ? previous : '';
   projectName.placeholder = defaultName(type, cropSelect.value);
-  get('scan-selected-land').href = './scan.html?type=' + landTypes[type].scanType;
+  const scanPath = './scan.html?type=' + landTypes[type].scanType;
+  get('scan-selected-land').href = scanPath;
+  get('nav-scan').href = scanPath;
 }
 
 for (const input of landInputs) input.addEventListener('change', updateLandActions);

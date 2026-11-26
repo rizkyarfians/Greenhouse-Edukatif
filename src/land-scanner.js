@@ -1,4 +1,6 @@
 import './land-scanner.css';
+import './workspace-theme.css';
+import './workflow-theme.css';
 import {browserLand, landStore} from './land-storage.js';
 import {storageError} from './account-storage-api.js';
 import {landProfile} from './land-profile.js';

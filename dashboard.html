@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f3f6ef">
+<meta name="theme-color" content="#f1f3ed">
 <title>Automotion · Lahan dan Simulasi</title>
 </head>
 <body>
@@ -12,6 +12,11 @@
 <div id="dashboard-content" hidden>
 <header class="topbar"><div class="shell brand-row">
   <div class="brand"><span class="brand-icon" data-icon="sprout"></span><span>Automotion</span></div>
+  <nav class="home-nav" aria-label="Navigasi lahan">
+    <a href="#home-title" aria-current="location"><span data-workspace-icon="layout-dashboard" aria-hidden="true"></span>Beranda</a>
+    <a id="nav-scan" href="./scan.html?type=greenhouse"><span data-workspace-icon="scan-line" aria-hidden="true"></span>Scan lahan</a>
+    <a href="#saved-title"><span data-workspace-icon="folder" aria-hidden="true"></span>Simpanan</a>
+  </nav>
   <div class="account-nav">
     <span id="account-label" class="demo"><i></i> Mode tamu</span>
     <a id="account-login" href="./index.html">Masuk</a>
@@ -21,19 +26,24 @@
 </div></header>
 <main class="shell">
   <section id="guest-home" class="guest-home" aria-labelledby="home-title">
+    <h1 id="home-title" tabindex="-1">Lahan dan simulasi</h1>
     <div class="home-hero">
-      <div class="home-preview">
-        <h1 id="home-title" tabindex="-1">Lahan dan simulasi</h1>
-        <figure class="plot-preview">
-          <img src="./greenhouse-preview.png" width="1050" height="800" alt="Model greenhouse dengan rangka terbuka dan baris tanaman melon">
-          <figcaption>Contoh greenhouse melon</figcaption>
-        </figure>
-      </div>
+      <figure class="plot-preview model-stage">
+        <figcaption>
+          <div>
+            <h2>Greenhouse melon</h2>
+            <p>Pratinjau model 3D</p>
+          </div>
+          <span class="preview-icon" data-workspace-icon="box" aria-hidden="true"></span>
+        </figcaption>
+        <img src="./greenhouse-preview.png" width="1050" height="800" alt="Model greenhouse dengan rangka terbuka dan baris tanaman melon">
+        <a class="plan-link" href="./farm.html"><span data-workspace-icon="map" aria-hidden="true"></span>Rencana lahan 3D</a>
+      </figure>
       <section class="home-copy panel" aria-labelledby="plot-title">
-        <h2 id="plot-title">Pilih lahan</h2>
+        <h2 id="plot-title">Siapkan simulasi</h2>
         <form id="start-simulation" class="start-simulation">
           <fieldset class="land-options">
-            <legend class="visually-hidden">Jenis lahan</legend>
+            <legend>Jenis lahan</legend>
             <label class="land-option">
               <input type="radio" name="land-type" value="greenhouse" checked>
               <span class="land-card"><span class="land-icon" data-land-icon="greenhouse" aria-hidden="true"></span><span><strong>Greenhouse</strong><small>Budidaya terlindung</small></span></span>
@@ -47,19 +57,20 @@
           <select id="simulation-crop" name="crop" class="crop-select">
             <option value="">Melon</option>
           </select>
-          <a id="scan-selected-land" class="primary-button" href="./scan.html?type=greenhouse">Scan lahan <span aria-hidden="true">→</span></a>
-          <button class="secondary-button start-button" type="submit">Mulai simulasi 3D</button>
           <details class="simulation-options">
             <summary>Beri nama simulasi</summary>
             <input id="project-name" name="project" aria-label="Nama simulasi" type="text" maxlength="60" placeholder="Kebun Melon">
           </details>
+          <button class="primary-button start-button" type="submit"><span data-workspace-icon="box" aria-hidden="true"></span>Mulai simulasi 3D</button>
+          <a id="scan-selected-land" class="secondary-button" href="./scan.html?type=greenhouse"><span data-workspace-icon="scan-line" aria-hidden="true"></span>Scan lahan</a>
         </form>
-        <a class="plan-link" href="./farm.html">Buka rencana lahan 3D</a>
       </section>
     </div>
     <section class="saved-projects" aria-labelledby="saved-title">
-      <h2 id="saved-title">Simulasi tersimpan</h2>
-      <p id="project-storage-label"></p>
+      <div class="saved-heading">
+        <span class="saved-icon" data-workspace-icon="folder" aria-hidden="true"></span>
+        <div><h2 id="saved-title" tabindex="-1">Simulasi tersimpan</h2><p id="project-storage-label"></p></div>
+      </div>
       <p id="home-message" class="home-message" role="status"></p>
       <div class="saved-actions">
         <button type="button" class="secondary-button" id="retry-saved" hidden>Muat ulang simpanan</button>
@@ -73,11 +84,11 @@
   <section id="simulation-view" hidden aria-labelledby="simulation-title">
   <div class="intro simulation-intro">
     <div>
-      <button type="button" id="back-home" class="back-home">← Beranda</button>
+      <button type="button" id="back-home" class="back-home"><span data-workspace-icon="chevron-left" aria-hidden="true"></span>Beranda</button>
       <h1 id="simulation-title" tabindex="-1">Kebun Melon</h1>
     </div>
     <div class="save-controls">
-      <button type="button" class="primary-button" id="save-simulation" disabled>Simpan simulasi</button>
+      <button type="button" class="primary-button" id="save-simulation" disabled><span data-workspace-icon="save" aria-hidden="true"></span>Simpan simulasi</button>
       <p id="save-message" role="status"></p>
     </div>
   </div>
