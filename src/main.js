@@ -2,6 +2,8 @@ import './style.css';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
 import {detailedCrops} from './detailed-crops.js';
 import {cropChoices} from './land-type.js';
+import {dashboardAccount} from './dashboard-account.js';
+import {browserSimulationStore, storagePrefix} from './simulation-storage.js';
 import greenhouseIcon from 'lucide-static/icons/house.svg?raw';
 
 const get = id => document.getElementById(id);
@@ -11,6 +13,10 @@ const savedList = get('saved-list');
 const homeMessage = get('home-message');
 const saveButton = get('save-simulation');
 const saveMessage = get('save-message');
+const backButton = get('back-home');
+const retrySaved = get('retry-saved');
+const importLocal = get('import-local');
+const importStatus = get('import-status');
 const landTypes = {
   greenhouse: {
     label: 'Greenhouse Melon',
@@ -31,7 +37,6 @@ const cropSelect = get('simulation-crop');
 const modelChoices = Object.entries(detailedCrops).map(([id, crop]) => ({...crop, id}));
 const availableCrops = type => cropChoices(modelChoices, landTypes[type].scanType);
 const supportsCrop = (type, id) => availableCrops(type).some(crop => crop.id === id);
-const storagePrefix = 'greenhouse-edukatif:guest:v1:';
 const dateFormat = new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
   timeStyle: 'short',
@@ -39,6 +44,23 @@ const dateFormat = new Intl.DateTimeFormat('id-ID', {
 let activeProject;
 let simulation;
 let lastSavedState;
+let listRequest = 0;
+const storeReady = dashboardAccount.then(async account => {
+  if (!account) return null;
+  if (account.mode !== 'firebase') return browserSimulationStore;
+  get('project-storage-label').textContent = 'Simpanan akun Google · tersedia di perangkat lain';
+  importLocal.hidden = !localProjects().length;
+  const {firestoreSimulationStore} = await import('./firestore-simulations.js');
+  return firestoreSimulationStore(account);
+});
+
+function localProjects() {
+  try {
+    return browserSimulationStore.list();
+  } catch {
+    return [];
+  }
+}
 
 document.querySelector('.brand-icon').innerHTML = sprout;
 document.querySelector('.brand-icon').setAttribute('aria-hidden', 'true');
@@ -49,53 +71,36 @@ function selectedLandType() {
   return landInputs.find(input => input.checked).value;
 }
 
-function percentage(value) {
-  return Number.isFinite(value) && value >= 0 && value <= 100;
-}
-
-function validState(type, state) {
-  if (type === 'rice') {
-    return Number.isInteger(state.waterDepth) && state.waterDepth >= 0 && state.waterDepth <= 5 &&
-      percentage(state.soilMoisture);
-  }
-  if (!['A', 'B'].includes(state.zone) || ![null, 'A', 'B'].includes(state.completedZone) ||
-      typeof state.roofVisible !== 'boolean') return false;
-  const {temperature, humidity, water, nutrient} = state.readings;
-  return Number.isFinite(temperature) &&
-    [humidity, water, nutrient, state.zoneMedia.A, state.zoneMedia.B].every(percentage);
-}
-
-function parseProject(json, key) {
-  try {
-    const project = JSON.parse(json);
-    const {id, name, updatedAt, state, cropId, type = 'greenhouse'} = project;
-    if (!/^[a-f0-9]{32}$/.test(id) || key !== storagePrefix + id ||
-        typeof name !== 'string' || !name.trim() ||
-        typeof updatedAt !== 'number' || !Number.isFinite(new Date(updatedAt).getTime())) return null;
-    if (!Object.hasOwn(landTypes, type)) return null;
-    if (cropId === undefined ? !validState(type, state) :
-        !supportsCrop(type, cropId) || !state || typeof state !== 'object' || Array.isArray(state)) return null;
-    return {...project, type};
-  } catch {
-    return null;
-  }
-}
-
-function renderSavedProjects() {
+async function renderSavedProjects() {
+  const request = ++listRequest;
+  retrySaved.hidden = true;
   savedList.replaceChildren();
-  const projects = [];
+  homeMessage.textContent = 'Memuat simpanan…';
   try {
-    for (let index = 0; index < localStorage.length; index++) {
-      const key = localStorage.key(index);
-      if (!key?.startsWith(storagePrefix)) continue;
-      const project = parseProject(localStorage.getItem(key), key);
-      if (project) projects.push(project);
+    const store = await storeReady;
+    if (!store || request !== listRequest) return;
+    if (store === browserSimulationStore) {
+      get('project-storage-label').textContent = 'Simpanan di browser ini';
     }
-  } catch {
-    homeMessage.textContent = 'Simpanan tidak bisa dibuka. Penyimpanan browser tidak tersedia.';
-    return;
+    const projects = await store.list();
+    if (request !== listRequest) return;
+    showSavedProjects(projects);
+  } catch (error) {
+    if (request !== listRequest) return;
+    homeMessage.textContent = storageError(error, 'memuat simpanan');
+    retrySaved.hidden = false;
   }
+}
 
+function storageError(error, action) {
+  if (error?.code === 'permission-denied') {
+    return 'Akses database ditolak. Periksa pengaturan Firestore untuk project ini.';
+  }
+  if (error?.code === 'unauthenticated') return 'Sesi Google berakhir. Masuk kembali dan coba lagi.';
+  return 'Gagal ' + action + '. Coba lagi.';
+}
+
+function showSavedProjects(projects) {
   homeMessage.textContent = projects.length ? '' : 'Belum ada simulasi tersimpan.';
   for (const project of projects.sort((a, b) => b.updatedAt - a.updatedAt)) {
     const row = document.createElement('li');
@@ -185,20 +190,28 @@ get('start-simulation').addEventListener('submit', event => {
   openProject({id, name, type, cropId});
 });
 
-saveButton.addEventListener('click', () => {
+saveButton.addEventListener('click', async () => {
   const state = simulation.snapshotSimulation();
   const project = {...activeProject, state, updatedAt: Date.now()};
+  saveButton.disabled = true;
+  backButton.disabled = true;
+  saveMessage.textContent = 'Menyimpan…';
   try {
-    localStorage.setItem(storagePrefix + project.id, JSON.stringify(project));
+    const store = await storeReady;
+    if (!store) return;
+    await store.save(project);
     activeProject = project;
     lastSavedState = JSON.stringify(state);
-    saveMessage.textContent = 'Tersimpan di browser ini.';
-  } catch {
-    saveMessage.textContent = 'Gagal menyimpan. Periksa pengaturan atau ruang penyimpanan browser, lalu coba lagi.';
+    saveMessage.textContent = store === browserSimulationStore ? 'Tersimpan di browser ini.' : 'Tersimpan ke akun Google.';
+  } catch (error) {
+    saveMessage.textContent = storageError(error, 'menyimpan simulasi');
+  } finally {
+    saveButton.disabled = false;
+    backButton.disabled = false;
   }
 });
 
-get('back-home').addEventListener('click', () => {
+backButton.addEventListener('click', () => {
   if (!saveButton.disabled && JSON.stringify(simulation.snapshotSimulation()) !== lastSavedState &&
       !window.confirm('Ada perubahan yang belum disimpan. Kembali ke beranda?')) return;
   simulation?.pauseSimulation();
@@ -210,7 +223,44 @@ get('back-home').addEventListener('click', () => {
   window.scrollTo(0, 0);
 });
 
-window.addEventListener('storage', event => {
-  if (!home.hidden && (!event.key || event.key.startsWith(storagePrefix))) renderSavedProjects();
+retrySaved.addEventListener('click', renderSavedProjects);
+
+importLocal.addEventListener('click', async () => {
+  const local = localProjects();
+  if (!local.length || !window.confirm('Salin ' + local.length + ' simulasi dari browser ini ke akun Google yang aktif?')) return;
+  importLocal.disabled = true;
+  importStatus.textContent = 'Menyalin simpanan browser…';
+  try {
+    const store = await storeReady;
+    let copied = 0, failed = 0;
+    for (const project of local) {
+      try {
+        if (await store.copyIfMissing(project)) copied++;
+      } catch {
+        failed++;
+      }
+    }
+    const skipped = local.length - copied - failed;
+    importStatus.textContent = copied + ' disalin · ' + skipped + ' sudah ada' +
+      (failed ? ' · ' + failed + ' gagal. Coba lagi.' : '.');
+    await renderSavedProjects();
+  } catch (error) {
+    importStatus.textContent = storageError(error, 'menyalin simpanan');
+  } finally {
+    importLocal.disabled = false;
+  }
+});
+
+window.addEventListener('storage', async event => {
+  if (event.key && !event.key.startsWith(storagePrefix)) return;
+  const account = await dashboardAccount;
+  if (account?.mode === 'firebase') {
+    importLocal.hidden = !localProjects().length;
+  } else if (account && !home.hidden) {
+    renderSavedProjects();
+  }
+});
+window.addEventListener('pageshow', event => {
+  if (event.persisted && !home.hidden) renderSavedProjects();
 });
 renderSavedProjects();

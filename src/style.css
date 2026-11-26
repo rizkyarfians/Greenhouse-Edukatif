@@ -207,3 +207,8 @@ a:focus-visible, summary:focus-visible { outline: 3px solid #3889b3; outline-off
 
 .crop-stage { margin-bottom: 32px; }
 .crop-stage .section-head p { margin-top: 4px; }
+
+.saved-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-actions:has(button:not([hidden])) { margin-top: 12px; }
+.saved-actions button { white-space: normal; }
+#project-storage-label { font-size: 14px; }

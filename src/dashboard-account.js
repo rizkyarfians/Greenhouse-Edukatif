@@ -25,45 +25,59 @@ function revealDashboard() {
   content.hidden = false;
 }
 
-async function openDashboard() {
-  if (hasGuestSession()) {
-    label.textContent = 'Mode tamu';
-    login.hidden = false;
-    logout.hidden = true;
-    revealDashboard();
-    return;
-  }
-  try {
-    let displayName;
-    if (firebaseConfigured) {
-      const user = await (await loadFirebaseAuth()).currentUser();
-      if (user) displayName = user.displayName || user.email || 'Akun Google';
-    } else {
-      const response = await fetch('/api/auth/session', { signal: AbortSignal.timeout(4000) });
-      if (response.ok) {
-        const { user } = await response.json();
-        if (user) displayName = user.name || user.email || 'Akun Google';
-      }
+async function currentSession() {
+  if (hasGuestSession()) return {mode: 'guest', name: 'Mode tamu'};
+  if (firebaseConfigured) {
+    const firebase = await loadFirebaseAuth();
+    const user = await firebase.currentUser();
+    if (user) {
+      return {mode: 'firebase', name: user.displayName || user.email || 'Akun Google', uid: user.uid, firebase};
     }
-    if (displayName) {
-      label.textContent = displayName;
-      login.hidden = true;
-      logout.hidden = false;
-      revealDashboard();
-      return;
+  } else {
+    const response = await fetch('/api/auth/session', {signal: AbortSignal.timeout(4000)});
+    if (response.ok) {
+      const {user} = await response.json();
+      if (user) return {mode: 'server', name: user.name || user.email || 'Akun Google'};
     }
-  } catch {
-    // Send the user through the sign-in page, which also offers guest access.
   }
-  location.replace('./index.html');
+  return null;
 }
 
-openDashboard();
-window.addEventListener('pageshow', event => {
-  if (event.persisted) {
+function revealSession(session) {
+  label.textContent = session.name;
+  login.hidden = session.mode !== 'guest';
+  logout.hidden = session.mode === 'guest';
+  revealDashboard();
+}
+
+export const dashboardAccount = currentSession().catch(() => null).then(session => {
+  if (!session) {
+    location.replace('./index.html');
+    return null;
+  }
+  revealSession(session);
+  session.firebase?.watchUser(user => {
+    if (user?.uid === session.uid) return;
     content.hidden = true;
     loading.hidden = false;
-    openDashboard();
+    location.reload();
+  });
+  return session;
+});
+
+window.addEventListener('pageshow', async event => {
+  if (!event.persisted) return;
+  content.hidden = true;
+  loading.hidden = false;
+  const previous = await dashboardAccount;
+  const current = await currentSession().catch(() => null);
+  if (!current) {
+    location.replace('./index.html');
+  } else if (previous?.mode === current.mode && previous?.uid === current.uid &&
+             previous?.mode !== 'server') {
+    revealSession(current);
+  } else {
+    location.reload();
   }
 });
 

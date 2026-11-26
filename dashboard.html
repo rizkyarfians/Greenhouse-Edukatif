@@ -59,7 +59,13 @@
     </div>
     <section class="saved-projects" aria-labelledby="saved-title">
       <h2 id="saved-title">Simulasi tersimpan</h2>
+      <p id="project-storage-label"></p>
       <p id="home-message" class="home-message" role="status"></p>
+      <div class="saved-actions">
+        <button type="button" class="secondary-button" id="retry-saved" hidden>Muat ulang simpanan</button>
+        <button type="button" class="secondary-button" id="import-local" hidden>Salin simpanan browser ke akun</button>
+      </div>
+      <p id="import-status" role="status"></p>
       <ul class="saved-list" id="saved-list"></ul>
     </section>
   </section>
@@ -170,6 +176,5 @@
   <div id="device-details-actions" class="device-detail-actions"></div>
 </dialog>
 <script type="module" src="/src/main.js"></script>
-<script type="module" src="./src/dashboard-account.js"></script>
 </body>
 </html>

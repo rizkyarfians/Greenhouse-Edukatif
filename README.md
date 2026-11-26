@@ -110,7 +110,18 @@ Halaman awal menyediakan **Masuk dengan Google** dan **Lanjut sebagai tamu**. Un
 
 Periksa output build untuk `[Firebase Auth] Konfigurasi Web App terbaca dan disertakan di build.` Jika muncul daftar variabel kosong, cek bahwa nama file persis `.env.local`, termasuk saat Windows menyembunyikan ekstensi `.txt`. Jika pop-up gagal, halaman menampilkan kode Firebase untuk membantu diagnosis.
 
-Gunakan konfigurasi Web App saja. Google login melalui Firebase membuka pemilih akun Google di pop-up dan menampilkan akun pada dashboard. Data scan masih tersimpan di browser. Firebase ID token belum diverifikasi oleh Fastify karena alur trial belum memiliki endpoint penyimpanan per akun.
+Gunakan konfigurasi Web App saja. Google login melalui Firebase membuka pemilih akun Google di pop-up dan menampilkan akun pada dashboard.
+
+### Simpan simulasi per akun dengan Cloud Firestore
+
+1. Buka project Firebase yang dipakai untuk login Google. Di **Build → Firestore Database**, buat database **(default)** dalam Production mode jika belum tersedia.
+2. Di tab **Rules**, terbitkan aturan dari [firestore.rules](firestore.rules). Jika database sudah punya aturan untuk fitur lain, gabungkan fungsi dan blok `match /automotionAccounts/{uid}/simulations/{simulationId}` ke aturan yang berlaku. Periksa aturan lama yang memberi izin luas pada jalur tersebut karena beberapa aturan yang cocok dapat berlaku bersamaan.
+3. Build ulang situs, masuk dengan Google, buka simulasi, dan tekan **Simpan simulasi**. Buka akun Google yang sama pada perangkat lain untuk melihatnya di daftar simpanan.
+4. Untuk menyalin simulasi lama, gunakan **Salin simpanan browser ke akun** di browser dan alamat situs yang menyimpan data tersebut. Salinan di database yang sudah ada tidak ditimpa saat mengulang impor.
+
+Untuk project Firestore baru khusus Automotion, rules juga bisa diterbitkan dari folder repo dengan `npx firebase-tools deploy --only firestore:rules --project PROJECT_ID` setelah masuk ke Firebase CLI. Gunakan Project ID yang sama dengan `VITE_FIREBASE_PROJECT_ID`.
+
+Simulasi akun menggunakan koleksi `automotionAccounts/{uid}/simulations`; rules membatasi akses ke UID pemilik. Mode tamu dan login dari server Fastify menggunakan simpanan browser. Scan patok, iklim, rekomendasi dan layout lahan juga menggunakan simpanan browser.
 
 ### Alternatif login Google melalui Fastify
 

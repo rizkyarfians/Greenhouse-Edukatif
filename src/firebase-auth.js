@@ -6,10 +6,13 @@ let initialized;
 
 export function loadFirebaseAuth() {
   initialized ??= Promise.all([import('firebase/app'), import('firebase/auth')]).then(([app, sdk]) => {
-    const auth = sdk.getAuth(app.initializeApp(config));
+    const firebaseApp = app.initializeApp(config);
+    const auth = sdk.getAuth(firebaseApp);
     const provider = new sdk.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     return {
+      app: firebaseApp,
+      watchUser: listener => sdk.onAuthStateChanged(auth, listener),
       signIn: () => sdk.signInWithPopup(auth, provider),
       signOut: () => sdk.signOut(auth),
       async currentUser() {
