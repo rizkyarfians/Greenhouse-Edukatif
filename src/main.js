@@ -189,7 +189,13 @@ function updateLandActions() {
     ...availableCrops(type).map(crop => new Option(crop.name, crop.id)));
   cropSelect.value = supportsCrop(type, previous) ? previous : '';
   projectName.placeholder = defaultName(type, cropSelect.value);
-  const scanPath = './scan.html?type=' + landTypes[type].scanType;
+  updateScanLinks(type);
+}
+
+function updateScanLinks(type) {
+  const params = new URLSearchParams({type: landTypes[type].scanType});
+  if (cropSelect.value) params.set('crop', cropSelect.value);
+  const scanPath = './scan.html?' + params;
   get('scan-selected-land').href = scanPath;
   get('nav-scan').href = scanPath;
 }
@@ -197,7 +203,9 @@ function updateLandActions() {
 for (const input of landInputs) input.addEventListener('change', updateLandActions);
 window.addEventListener('pageshow', updateLandActions);
 cropSelect.addEventListener('change', () => {
-  projectName.placeholder = defaultName(selectedLandType(), cropSelect.value);
+  const type = selectedLandType();
+  projectName.placeholder = defaultName(type, cropSelect.value);
+  updateScanLinks(type);
 });
 updateLandActions();
 

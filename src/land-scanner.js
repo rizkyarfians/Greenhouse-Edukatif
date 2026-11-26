@@ -1,6 +1,8 @@
 import './land-scanner.css';
 import './workspace-theme.css';
 import './workflow-theme.css';
+import './scan-beds.css';
+import {setupBedPreview} from './scan-bed-preview.js';
 import {browserLand, landStore} from './land-storage.js';
 import {storageError} from './account-storage-api.js';
 import {landProfile} from './land-profile.js';
@@ -8,12 +10,14 @@ import {measure} from './land-geometry.js';
 import {landType} from './land-type.js';
 import {createCameraOverlay} from './land-camera-overlay.js';
 const $=id=>document.getElementById(id);
-const requested=new URLSearchParams(location.search).get('type');
+const query=new URLSearchParams(location.search);
+const requested=query.get('type');
 $('land-type').value=landType(requested);
 let store, stored = null, storageBusy = true;
 let storageSession = landStore();
 let savedSignature;
 let points=[], edit=-1, stream=null, opening=false, cameraRequest=0, locating=false, positionRequest=0;
+const previewBeds = setupBedPreview(query.get('crop'));
 const cameraOverlay = createCameraOverlay({
   button: $('camera-markers-toggle'),
   overlay: $('camera-overlay'),
@@ -35,6 +39,7 @@ const NS='http://www.w3.org/2000/svg';
 const el=(tag,attrs,text)=>{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));if(text!==undefined)e.textContent=text;return e;};
 function render(){
   const r=measure(points);
+  previewBeds(r, $('land-type').value);
   $('point-count').textContent=points.length+' patok';
   $('camera-count').textContent = $('point-count').textContent;
   $('area').textContent=r.valid?fmt(r.area)+' m²':'—';
