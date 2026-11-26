@@ -66,7 +66,7 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
     else if (!orientationReading?.axes) label = now - openedAt < 5000
       ? 'Menunggu kompas. Gerakkan HP perlahan.'
       : 'Kompas tidak mengirim arah. Cek izin sensor gerak di Chrome.';
-    else if (visible.length) label = modelLoading ? 'Memuat model patok 3D…' : 'Patok 2D · WebGL 3D tidak tersedia.';
+    else if (visible.length) label = modelLoading ? 'Memuat model patok 3D…' : 'Patok 2D · model bambu tidak dapat digambar.';
     else if (offscreen) label = `${cameraDirections[offscreen.direction]} Patok ${offscreen.number} (≈${Math.round(offscreen.distance)} m).`;
     else if (nearby) label = `Menjauh hingga sekitar ${Math.ceil(nearby.uncertainty) + 2} m dari Patok ${nearby.number}, lalu bidik balik.`;
     else label = 'Patok di luar gambar. Arahkan kamera ke lokasi patok.';
@@ -108,7 +108,7 @@ export function createCameraOverlay({ button, overlay, markers, models, message,
 
     const drewModels = modelLayer?.draw(visible, modelView) ?? false;
     overlay.classList.toggle('has-stake-models', drewModels);
-    if (drewModels) label = 'Patok 3D · posisi perkiraan GPS';
+    if (drewModels) label = 'Patok bambu 3D · posisi perkiraan GPS';
     if (message.textContent !== label) message.textContent = label;
   }
 
