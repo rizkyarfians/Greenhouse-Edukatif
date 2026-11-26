@@ -26,6 +26,15 @@ function firebaseError(error, fallback = 'failed') {
 }
 status.textContent = message ?? '';
 
+document.getElementById('guest-entry').addEventListener('click', event => {
+  try {
+    sessionStorage.setItem('automotion.guest', '1');
+  } catch {
+    event.preventDefault();
+    status.textContent = 'Izinkan penyimpanan situs untuk melanjutkan sebagai tamu.';
+  }
+});
+
 async function prepareGoogleLogin() {
   if (firebaseConfigured) {
     status.textContent = 'Menyiapkan login Google…';

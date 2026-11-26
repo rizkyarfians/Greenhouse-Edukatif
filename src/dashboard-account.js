@@ -6,18 +6,33 @@ const login = document.getElementById('account-login');
 const logout = document.getElementById('account-logout');
 const status = document.getElementById('account-status');
 
-const params = new URLSearchParams(location.search);
-let isGuest = params.get('guest') === '1';
-try {
-  if (isGuest) sessionStorage.setItem('automotion.guest', '1');
-  else if (params.get('account') === 'google') sessionStorage.removeItem('automotion.guest');
-  else isGuest = sessionStorage.getItem('automotion.guest') === '1';
-} catch {
-  // The dashboard still works if the browser blocks storage.
+const content = document.getElementById('dashboard-content');
+const loading = document.getElementById('dashboard-loading');
+
+function hasGuestSession() {
+  try {
+    if (new URLSearchParams(location.search).get('account') === 'google') {
+      sessionStorage.removeItem('automotion.guest');
+    }
+    return sessionStorage.getItem('automotion.guest') === '1';
+  } catch {
+    return false;
+  }
 }
 
-async function showAccount() {
-  if (isGuest) return;
+function revealDashboard() {
+  loading.hidden = true;
+  content.hidden = false;
+}
+
+async function openDashboard() {
+  if (hasGuestSession()) {
+    label.textContent = 'Mode tamu';
+    login.hidden = false;
+    logout.hidden = true;
+    revealDashboard();
+    return;
+  }
   try {
     let displayName;
     if (firebaseConfigured) {
@@ -34,13 +49,23 @@ async function showAccount() {
       label.textContent = displayName;
       login.hidden = true;
       logout.hidden = false;
+      revealDashboard();
+      return;
     }
   } catch {
-    // Static previews and offline sessions can use the guest dashboard.
+    // Send the user through the sign-in page, which also offers guest access.
   }
+  location.replace('./index.html');
 }
 
-showAccount();
+openDashboard();
+window.addEventListener('pageshow', event => {
+  if (event.persisted) {
+    content.hidden = true;
+    loading.hidden = false;
+    openDashboard();
+  }
+});
 
 logout.addEventListener('click', async () => {
   logout.disabled = true;
@@ -51,7 +76,7 @@ logout.addEventListener('click', async () => {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (!response.ok) throw new Error('Logout failed');
     }
-    location.assign('./index.html');
+    location.replace('./index.html');
   } catch {
     status.textContent = 'Gagal keluar. Coba lagi.';
     logout.disabled = false;

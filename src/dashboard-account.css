@@ -14,3 +14,11 @@
 .account-nav a { color: #225b41; font-weight: 700; }
 .account-nav [hidden] { display: none; }
 #account-status:empty { display: none; }
+
+.dashboard-loading {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+}
+.dashboard-loading[hidden], #dashboard-content[hidden] { display: none; }
