@@ -3,6 +3,7 @@ import sprout from 'lucide-static/icons/sprout.svg?raw';
 import {detailedCrops} from './detailed-crops.js';
 import {cropChoices} from './land-type.js';
 import {dashboardAccount} from './dashboard-account.js';
+import {accountSimulationStore, storageError} from './account-storage-api.js';
 import {browserSimulationStore, storagePrefix} from './simulation-storage.js';
 import greenhouseIcon from 'lucide-static/icons/house.svg?raw';
 
@@ -45,13 +46,12 @@ let activeProject;
 let simulation;
 let lastSavedState;
 let listRequest = 0;
-const storeReady = dashboardAccount.then(async account => {
+const storeReady = dashboardAccount.then(account => {
   if (!account) return null;
-  if (account.mode !== 'firebase') return browserSimulationStore;
+  if (account.mode === 'guest') return browserSimulationStore;
   get('project-storage-label').textContent = 'Simpanan akun Google · tersedia di perangkat lain';
   importLocal.hidden = !localProjects().length;
-  const {firestoreSimulationStore} = await import('./firestore-simulations.js');
-  return firestoreSimulationStore(account);
+  return accountSimulationStore(account);
 });
 
 function localProjects() {
@@ -90,14 +90,6 @@ async function renderSavedProjects() {
     homeMessage.textContent = storageError(error, 'memuat simpanan');
     retrySaved.hidden = false;
   }
-}
-
-function storageError(error, action) {
-  if (error?.code === 'permission-denied') {
-    return 'Akses database ditolak. Periksa pengaturan Firestore untuk project ini.';
-  }
-  if (error?.code === 'unauthenticated') return 'Sesi Google berakhir. Masuk kembali dan coba lagi.';
-  return 'Gagal ' + action + '. Coba lagi.';
 }
 
 function showSavedProjects(projects) {
@@ -254,7 +246,7 @@ importLocal.addEventListener('click', async () => {
 window.addEventListener('storage', async event => {
   if (event.key && !event.key.startsWith(storagePrefix)) return;
   const account = await dashboardAccount;
-  if (account?.mode === 'firebase') {
+  if (account && account.mode !== 'guest') {
     importLocal.hidden = !localProjects().length;
   } else if (account && !home.hidden) {
     renderSavedProjects();

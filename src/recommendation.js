@@ -1,3 +1,5 @@
+import {loadLand} from './land-storage.js';
+import {storageError} from './account-storage-api.js';
 import './land-scanner.css';
 import './recommendation.css';
 import {measure} from './land-geometry.js';
@@ -9,7 +11,12 @@ const labels={candidate:'Kandidat awal',conditional:'Perlu perlakuan / verifikas
 const fmt=(v,d=1)=>Number.isFinite(v)?v.toLocaleString('id-ID',{maximumFractionDigits:d}):'—';
 let land=null,profile=null,climate=null,input=null,results=[],selected=null;
 function read(key){try{return JSON.parse(localStorage.getItem(key)||'null');}catch{return null;}}
-const saved=read('automotion.land.v1'),m=saved&&measure(saved.points);
+$('land-info').textContent='Memuat profil lahan…';
+$('run').disabled=true;
+$('restore').disabled=true;
+
+loadLand().then(function init(saved) {
+const m=saved&&measure(saved.points);
 if(m?.valid){land={type:landType(saved.landType),name:typeof saved.name==='string'?saved.name:'Lahan',points:saved.points.map(q=>({lat:q.lat,lon:q.lon})),areaM2:m.area,center:m.center,fingerprint:JSON.stringify(saved.points.map(q=>[q.lat,q.lon]))};const c=read('automotion.climate.v1');if(c?.version===1&&c.landFingerprint===land.fingerprint)profile=c;}
 climate=extractClimate(profile,new Date().toISOString());
 $('land-info').textContent=land?land.name+' · '+fmt(land.areaM2)+' m² · '+(land.type==='greenhouse'?'Greenhouse':'Lahan terbuka'):'Belum ada profil valid. Simpan lahan melalui Scan Lahan.';
@@ -37,3 +44,4 @@ function plan(){return selected?{version:1,landType:land.type,modelVersion,landF
 $('save-plan').addEventListener('click',()=>{const p=plan();if(!p)return;try{localStorage.setItem(key,JSON.stringify(p));$('plan-status').textContent='Rencana disimpan di perangkat ini.';}catch{$('plan-status').textContent='Penyimpanan gagal. Gunakan ekspor JSON.';}});
 $('export-plan').addEventListener('click',()=>{const p=plan();if(!p)return;const url=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='automotion-farm-plan.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 $('restore').addEventListener('click',()=>{const p=read(key);if(!p||p.version!==1||p.landFingerprint!==land.fingerprint||!sameLandType(p.landType,land.type)||!p.input){$('status').textContent='Tidak ada rencana yang cocok dengan lahan ini.';return;}for(const k of ['water','soil','drain']){const select=$(k);if([...select.options].some(o=>o.value===p.input[k]))select.value=p.input[k];}$('indoor-temp').value=Number.isFinite(p.input.indoorTemperature)?p.input.indoorTemperature:'';$('ph').value=Number.isFinite(p.input.ph)&&p.input.ph>=0&&p.input.ph<=14?p.input.ph:'';$('usable').value=Number.isFinite(p.input.usable)&&p.input.usable>=1&&p.input.usable<=100?p.input.usable:80;if(!$('assessment').reportValidity())return;analyze();const r=results.find(x=>x.crop.id===p.selected?.id);if(r&&r.verdict!=='blocked')choose(r);$('status').textContent='Input tersimpan dibuka dan dinilai ulang dengan data iklim yang tersedia.';});
+}).catch(error=>{$('land-info').textContent=storageError(error,'memuat profil lahan');});

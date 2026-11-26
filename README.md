@@ -15,7 +15,7 @@ Viewer menggunakan WebGL jika tersedia. Jika perangkat tidak menyediakan WebGL, 
 
 ## Land Scanner — Cycle 1
 
-Buka **Scan Lahan** dari dashboard. Kamera merupakan bantuan visual; GPS mengukur posisi ponsel saat tombol tambah patok ditekan. Datangi setiap batas berurutan, koreksi koordinat bila perlu, lalu simpan profil lokal atau ekspor GeoJSON. Kamera/GPS memerlukan HTTPS atau localhost; pada HP melalui IP lokal HTTP, gunakan koordinat manual atau deploy HTTPS. Data tidak dikirim ke server. Satu profil guest tersimpan per browser. Sketsa bukan citra satelit. Estimasi geometri menggunakan bidang singgung lokal (batas 10 km), bukan survei resmi.
+Buka **Scan Lahan** dari dashboard. Kamera merupakan bantuan visual; GPS mengukur posisi ponsel saat tombol tambah patok ditekan. Datangi setiap batas berurutan, koreksi koordinat bila perlu, lalu tekan **Simpan patok** atau ekspor GeoJSON. Kamera/GPS memerlukan HTTPS atau localhost; pada HP melalui IP lokal HTTP, gunakan koordinat manual atau deploy HTTPS. Akun Google menyimpan satu profil lahan di PostgreSQL. Mode tamu menyimpan satu profil per browser. Sketsa bukan citra satelit. Estimasi geometri menggunakan bidang singgung lokal (batas 10 km), bukan survei resmi.
 
 **Buka kamera** memenuhi viewport dengan tombol **Tambah patok GPS**, **Hapus terakhir**, dan **Tutup**. Saat titik direkam, status kamera menampilkan patok tersimpan. Model bambu 3D digambar dari beberapa sudut dengan Canvas saat koordinat patok bisa diproyeksikan menggunakan GPS dan kompas. Model ini bisa tampil di perangkat tanpa WebGL. Jika GPS dan kompas tersedia, pin patok yang sudah direkam muncul di arah perkiraan pada kamera. Gunakan **Izinkan kompas HP** jika browser meminta izin sensor lewat ketukan. Jika pin belum bisa diproyeksikan, tampilan kamera tetap mengonfirmasi patok terakhir yang terekam dan menjelaskan apakah GPS, kompas, atau arah kamera perlu diperiksa. Tiang diproyeksikan dari koordinat GPS yang sama saat pengguna berpindah atau mengubah arah kamera. Tiang jauh diperbesar secukupnya agar terlihat tanpa menggeser titik dasarnya. Perubahan kecil pada pembacaan posisi kamera dan kompas disaring untuk mengurangi goyangan. Tampilan mengasumsikan lahan datar dan kamera sekitar 1,5 m di atas tanah. Perkiraan posisi bisa bergeser karena GPS, kompas, atau lensa. Jika terlalu dekat untuk menentukan arah, tampil **Dekat Patok**. Pengukuran tetap memakai koordinat.
 
@@ -106,22 +106,30 @@ Halaman awal menyediakan **Masuk dengan Google** dan **Lanjut sebagai tamu**. Un
    VITE_FIREBASE_APP_ID=nilai_appId
    ```
 
-5. Jalankan `npm ci` dan `npm run build`, lalu refresh halaman utama di HP. Firebase Auth bisa dipakai dari build statis pada tunnel yang mengarah ke port 8080. Jika tunnel sementara berganti hostname, tambahkan hostname yang baru ke **Authorized domains**.
+5. Jalankan `npm ci` dan `npm run build`, lalu refresh halaman utama di HP. Untuk menyimpan data akun, arahkan tunnel ke Fastify yang menyajikan build dan API pada port 3001. Jika tunnel sementara berganti hostname, tambahkan hostname yang baru ke **Authorized domains**.
 
 Periksa output build untuk `[Firebase Auth] Konfigurasi Web App terbaca dan disertakan di build.` Jika muncul daftar variabel kosong, cek bahwa nama file persis `.env.local`, termasuk saat Windows menyembunyikan ekstensi `.txt`. Jika pop-up gagal, halaman menampilkan kode Firebase untuk membantu diagnosis.
 
 Gunakan konfigurasi Web App saja. Google login melalui Firebase membuka pemilih akun Google di pop-up dan menampilkan akun pada dashboard.
 
-### Simpan simulasi per akun dengan Cloud Firestore
+### Simpan patok dan simulasi di PostgreSQL
 
-1. Buka project Firebase yang dipakai untuk login Google. Di **Build → Firestore Database**, buat database **(default)** dalam Production mode jika belum tersedia.
-2. Di tab **Rules**, terbitkan aturan dari [firestore.rules](firestore.rules). Jika database sudah punya aturan untuk fitur lain, gabungkan fungsi dan blok `match /automotionAccounts/{uid}/simulations/{simulationId}` ke aturan yang berlaku. Periksa aturan lama yang memberi izin luas pada jalur tersebut karena beberapa aturan yang cocok dapat berlaku bersamaan.
-3. Build ulang situs, masuk dengan Google, buka simulasi, dan tekan **Simpan simulasi**. Buka akun Google yang sama pada perangkat lain untuk melihatnya di daftar simpanan.
-4. Untuk menyalin simulasi lama, gunakan **Salin simpanan browser ke akun** di browser dan alamat situs yang menyimpan data tersebut. Salinan di database yang sudah ada tidak ditimpa saat mengulang impor.
+Firebase menangani login Google. Fastify memverifikasi token Firebase untuk project yang dikonfigurasi oleh `VITE_FIREBASE_PROJECT_ID` di `.env.local` atau `FIREBASE_PROJECT_ID` di environment server. Fastify menyimpan data berdasarkan UID akun di PostgreSQL.
 
-Untuk project Firestore baru khusus Automotion, rules juga bisa diterbitkan dari folder repo dengan `npx firebase-tools deploy --only firestore:rules --project PROJECT_ID` setelah masuk ke Firebase CLI. Gunakan Project ID yang sama dengan `VITE_FIREBASE_PROJECT_ID`.
+Dari root repo, dengan PostgreSQL berjalan dan `DATABASE_URL` di `.env` memakai port, user, dan database yang benar:
 
-Simulasi akun menggunakan koleksi `automotionAccounts/{uid}/simulations`; rules membatasi akses ke UID pemilik. Mode tamu dan login dari server Fastify menggunakan simpanan browser. Scan patok, iklim, rekomendasi dan layout lahan juga menggunakan simpanan browser.
+```cmd
+npm --prefix server ci
+npm --prefix server run db:migrate
+npm run build
+npm --prefix server start
+```
+
+Untuk uji di HP, jalankan `cloudflared tunnel --url http://127.0.0.1:3001`. Daftarkan hostname tunnel di **Authorized domains** hanya jika hostname yang dipakai belum terdaftar. Gunakan port yang sama dengan `API_PORT` jika diubah.
+
+Masuk dengan Google, atur patok lalu tekan **Simpan patok**. Halaman **Scan Lahan** membuka profil akun pada browser lain. Simpanan boleh berisi polygon yang belum lengkap. Untuk lanjut ke analisis iklim, lengkapi polygon dan simpan kembali. Jika data lama masih ada di browser serta alamat situs asal, **Buka patok lama dari browser** memuatnya ke editor untuk disimpan ke akun. Simulasi lama dapat disalin melalui tombol **Salin simpanan browser ke akun** di dashboard.
+
+Data hasil iklim, rekomendasi, dan layout tetap disimpan di browser. Pengaturan Firestore tidak diperlukan.
 
 ### Alternatif login Google melalui Fastify
 

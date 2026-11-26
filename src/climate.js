@@ -1,17 +1,22 @@
+import {loadLand} from './land-storage.js';
+import {storageError} from './account-storage-api.js';
 import './land-scanner.css';
 import './climate.css';
 import {measure} from './land-geometry.js';
 import {landType} from './land-type.js';
 import {shiftDate,summarizeDaily,seasonalBaseline} from './climate-core.js';
-const $=id=>document.getElementById(id), key='automotion.climate.v1', landKey='automotion.land.v1';
+const $=id=>document.getElementById(id), key='automotion.climate.v1';
 const fmt=(n,d=1)=>Number.isFinite(n)?n.toLocaleString('id-ID',{maximumFractionDigits:d}):'—';
 const daily='temperature_2m_mean,temperature_2m_min,temperature_2m_max,relative_humidity_2m_mean,precipitation_sum,et0_fao_evapotranspiration,shortwave_radiation_sum';
 const status=t=>{$('cl-status').textContent=t;};
 let land=null,profile=null,busy=false;
 function today(){const f=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());return ['year','month','day'].map(k=>f.find(p=>p.type===k).value).join('-');}
 function fingerprint(p){return JSON.stringify(p.points.map(q=>[q.lat,q.lon]));}
-try{const p=JSON.parse(localStorage.getItem(landKey)||'null');const m=p&&measure(p.points);if(m?.valid){land={type:landType(p.landType),name:typeof p.name==='string'?p.name:'Lahan',fingerprint:fingerprint(p),center:m.center,areaM2:m.area};}}catch{}
+$('land-info').textContent='Memuat profil lahan…';
+loadLand().then(p=>{const m=p&&measure(p.points);if(m?.valid){land={type:landType(p.landType),name:typeof p.name==='string'?p.name:'Lahan',fingerprint:fingerprint(p),center:m.center,areaM2:m.area};}
 $('land-info').textContent=land?land.name+' · '+(land.type==='greenhouse'?'Greenhouse · iklim luar bangunan':'Lahan terbuka')+' · '+fmt(land.areaM2)+' m² · '+land.center.lat.toFixed(5)+', '+land.center.lon.toFixed(5):'Belum ada profil valid. Kembali ke Scan Lahan lalu simpan profil terlebih dahulu.';
+controls();
+}).catch(error=>{$('land-info').textContent=storageError(error,'memuat profil lahan');});
 function controls(){const consent=$('consent').checked;$('load').disabled=!land||!consent||busy;$('baseline').disabled=!land||!consent||busy||!profile?.history;$('cached').disabled=!land||busy;$('forget').disabled=busy;$('export').disabled=!profile?.history||busy;}
 $('consent').addEventListener('change',controls);
 function query(endpoint,params){const u=new URL(endpoint);u.search=new URLSearchParams({latitude:land.center.lat.toFixed(5),longitude:land.center.lon.toFixed(5),...params});return u;}

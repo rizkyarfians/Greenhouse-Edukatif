@@ -1,5 +1,6 @@
 import './dashboard-account.css';
 import { firebaseConfigured, loadFirebaseAuth } from './firebase-auth.js';
+import { currentSession } from './account-session.js';
 
 const label = document.getElementById('account-label');
 const login = document.getElementById('account-login');
@@ -9,38 +10,9 @@ const status = document.getElementById('account-status');
 const content = document.getElementById('dashboard-content');
 const loading = document.getElementById('dashboard-loading');
 
-function hasGuestSession() {
-  try {
-    if (new URLSearchParams(location.search).get('account') === 'google') {
-      sessionStorage.removeItem('automotion.guest');
-    }
-    return sessionStorage.getItem('automotion.guest') === '1';
-  } catch {
-    return false;
-  }
-}
-
 function revealDashboard() {
   loading.hidden = true;
   content.hidden = false;
-}
-
-async function currentSession() {
-  if (hasGuestSession()) return {mode: 'guest', name: 'Mode tamu'};
-  if (firebaseConfigured) {
-    const firebase = await loadFirebaseAuth();
-    const user = await firebase.currentUser();
-    if (user) {
-      return {mode: 'firebase', name: user.displayName || user.email || 'Akun Google', uid: user.uid, firebase};
-    }
-  } else {
-    const response = await fetch('/api/auth/session', {signal: AbortSignal.timeout(4000)});
-    if (response.ok) {
-      const {user} = await response.json();
-      if (user) return {mode: 'server', name: user.name || user.email || 'Akun Google'};
-    }
-  }
-  return null;
 }
 
 function revealSession(session) {

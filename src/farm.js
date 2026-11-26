@@ -1,3 +1,5 @@
+import {loadLand} from './land-storage.js';
+import {storageError} from './account-storage-api.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import './land-scanner.css';
@@ -11,7 +13,9 @@ import {createCropGeometry,createCropMaterial} from './crop-models.js';
 const $=id=>document.getElementById(id),key='automotion.farm.v1';
 const fmt=(v,d=1)=>Number.isFinite(v)?v.toLocaleString('id-ID',{maximumFractionDigits:d}):'—';
 const read=k=>{try{return JSON.parse(localStorage.getItem(k)||'null');}catch{return null;}};
-const land=read('automotion.land.v1'),plan=read('automotion.recommendation.v1'),m=land&&measure(land.points);
+$('farm-info').textContent='Memuat profil lahan…';
+loadLand().then(function init(land) {
+const plan=read('automotion.recommendation.v1'),m=land&&measure(land.points);
 const fingerprint=m?.valid?JSON.stringify(land.points.map(q=>[q.lat,q.lon])):null;
 const type=landType(land?.landType),greenhouse=type==='greenhouse';
 const crop=cropChoices(allCrops,type).find(c=>c.id===plan?.selected?.id);
@@ -125,3 +129,4 @@ else{
  $('export-layout').addEventListener('click',()=>{if(!layout)return;const url=URL.createObjectURL(new Blob([JSON.stringify(data(),null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='automotion-layout.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
  window.addEventListener('pagehide',()=>{stopWater();});generate();
 }
+}).catch(error=>{$('farm-info').textContent=storageError(error,'memuat profil lahan');});

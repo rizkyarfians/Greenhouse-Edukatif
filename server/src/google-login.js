@@ -75,6 +75,7 @@ export function registerGoogleLogin(app, config, fetcher = fetch) {
   const oauthCookie = 'automotion_google_flow'
   const sessionCookie = 'automotion_session'
   const cookies = config ? signedCookies(config) : null
+  const readUser = request => cookies?.read(request.headers, sessionCookie)?.user ?? null
   const settings = (request, reply, done) => {
     reply.header('Cache-Control', 'no-store').header('Referrer-Policy', 'no-referrer')
     done()
@@ -83,7 +84,7 @@ export function registerGoogleLogin(app, config, fetcher = fetch) {
 
   app.get('/api/auth/session', { onRequest: settings }, (request) => ({
     googleEnabled: !!config,
-    user: cookies?.read(request.headers, sessionCookie)?.user ?? null,
+    user: readUser(request),
   }))
 
   app.get('/api/auth/google', { onRequest: settings }, (request, reply) => {
@@ -125,4 +126,6 @@ export function registerGoogleLogin(app, config, fetcher = fetch) {
     if (!config || request.headers.origin !== config.origin) return reply.code(403).send()
     return reply.header('Set-Cookie', cookies.write(sessionCookie, {}, 0)).code(204).send()
   })
+
+  return readUser
 }

@@ -14,6 +14,7 @@ const app = buildApp({
   pool: createPool(),
   logger: true,
   google: googleLoginConfig(),
+  firebaseProjectId: (process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID)?.trim(),
   webRoot: existsSync(dist) ? dist : undefined,
 })
 

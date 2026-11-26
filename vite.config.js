@@ -41,7 +41,7 @@ export default defineConfig(({ command, mode }) => {
       __AUTOMOTION_FIREBASE_CONFIG__: JSON.stringify(missing.length || configIssue ? null : config),
       __AUTOMOTION_FIREBASE_CONFIG_ISSUE__: JSON.stringify(configIssue),
     },
-    server: { proxy: { '/api/auth': 'http://127.0.0.1:3001' } },
+    server: { proxy: { '/api': 'http://127.0.0.1:3001' } },
     build: {
       rollupOptions: {
         input: Object.fromEntries(
