@@ -161,11 +161,21 @@ async function openProject(project) {
   get('simulation-title').focus();
   window.scrollTo(0, 0);
   try {
-    const module = await (project.cropId ? import('./crop-preview.js') : landType.load());
-    if (activeProject !== project) return;
     if (project.cropId) {
-      simulation = module.openCropPreview(project.cropId);
+      get('crop-view-title').textContent = 'Kebun ' + detailedCrops[project.cropId].name + ' 3D';
+      get('crop-view-caption').textContent = 'Memuat kebun…';
+      get('crop-bed-count').textContent = '';
+      get('reset-crop-view').disabled = true;
+      const params = new URLSearchParams({type: landType.scanType, crop: project.cropId});
+      get('view-crop-scan').href = './scan.html?' + params;
+      const module = await import('./crop-garden.js');
+      if (activeProject !== project) return;
+      const garden = await module.loadCropGarden(project.cropId, landType.scanType);
+      if (activeProject !== project) return;
+      simulation = module.openCropGarden(garden);
     } else {
+      const module = await landType.load();
+      if (activeProject !== project) return;
       simulation = module;
       simulation.openSimulation(project.state);
     }

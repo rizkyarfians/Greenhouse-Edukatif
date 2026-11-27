@@ -120,3 +120,30 @@
   .home-nav a { padding-inline: 8px; gap: 4px; }
   .home-nav svg { width: 15px; height: 15px; }
 }
+
+#crop-viewport {
+  background:
+    radial-gradient(ellipse at 48% 48%, #718372, transparent 65%),
+    linear-gradient(148deg, #36483b, #26372c);
+}
+#crop-bed-count {
+  background: var(--app-sage);
+  color: var(--app-dark);
+  border-radius: 99px;
+  padding: 5px 11px;
+  font-size: 13px;
+  text-align: center;
+}
+#crop-bed-count:empty { display: none; }
+.crop-view-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px 12px;
+}
+.crop-view-actions a { color: var(--app-dark); font-weight: 700; }
+@media (max-width: 540px) {
+  .crop-stage .section-head { flex-wrap: wrap; }
+  #crop-viewport { height: clamp(290px, 94vw, 470px); }
+}

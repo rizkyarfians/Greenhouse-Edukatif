@@ -95,14 +95,18 @@
   <section class="stage panel crop-stage" id="crop-dashboard" aria-labelledby="crop-view-title" hidden>
     <div class="section-head">
       <div>
-        <h2 id="crop-view-title">Tanaman 3D</h2>
-        <p id="crop-view-caption"></p>
+        <h2 id="crop-view-title">Kebun 3D</h2>
+        <p id="crop-view-caption" role="status"></p>
       </div>
+      <span id="crop-bed-count"></span>
     </div>
-    <div class="viewport" id="crop-viewport"></div>
+    <div class="viewport model-stage" id="crop-viewport"></div>
     <div class="viewer-bar">
       <span>Geser untuk memutar · Cubit atau gulir untuk zoom</span>
-      <button type="button" id="reset-crop-view">Atur ulang</button>
+      <div class="crop-view-actions">
+        <a id="view-crop-scan" href="./scan.html">Scan lahan</a>
+        <button type="button" id="reset-crop-view" disabled>Atur ulang</button>
+      </div>
     </div>
   </section>
   <div class="dashboard" id="greenhouse-dashboard" hidden>
