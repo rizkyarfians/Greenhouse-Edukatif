@@ -1,3 +1,4 @@
+import { requireAccount } from './account-auth.js'
 import { randomUUID } from 'node:crypto'
 import { readProject } from '../../src/simulation-storage.js'
 import { landProfile } from '../../src/land-profile.js'
@@ -8,29 +9,7 @@ const land = row => row ? { profile: { ...row.profile, updatedAt: row.updated_at
 
 export function registerAccountStorage(app, { pool, verifyFirebase, readGoogleUser, googleOrigin }) {
   app.register(async routes => {
-    routes.addHook('onRequest', async (request, reply) => {
-      reply.header('Cache-Control', 'private, no-store')
-      const auth = request.headers.authorization
-      if (auth) {
-        if (!verifyFirebase) return reply.code(503).send({ error: 'firebase-auth-unconfigured' })
-        if (!auth.startsWith('Bearer ')) return reply.code(401).send({ error: 'unauthenticated' })
-        try {
-          request.ownerKey = await verifyFirebase(auth.slice(7))
-        } catch {
-          return reply.code(503).send({ error: 'firebase-verification-unavailable' })
-        }
-      } else {
-        const user = readGoogleUser(request)
-        if (user) {
-          if (request.method !== 'GET' && request.headers.origin !== googleOrigin) {
-            return reply.code(403).send({ error: 'invalid-origin' })
-          }
-          request.ownerKey = 'google:' + user.sub
-        }
-      }
-      if (!request.ownerKey) return reply.code(401).send({ error: 'unauthenticated' })
-    })
-    routes.decorateRequest('ownerKey', null)
+    routes.addHook('onRequest', requireAccount({ verifyFirebase, readGoogleUser, googleOrigin }))
 
     routes.get('/simulations', async request => {
       const { rows } = await pool.query(`

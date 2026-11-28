@@ -138,3 +138,9 @@ Data hasil iklim, rekomendasi, dan layout tetap disimpan di browser. Pengaturan 
 3. Jalankan `npm --prefix server ci`, `npm run build`, lalu `npm --prefix server start`. Buka aplikasi dari origin yang sama dengan callback terdaftar. Untuk contoh localhost, alamatnya `http://localhost:3001/`. Fastify menyajikan `dist` sekaligus API login. Jika tunnel masih menuju server Python statis di port 8080, mode tamu tetap berjalan. Untuk Google, arahkan origin publik ke Fastify di port 3001.
 
 Jika konfigurasi Google belum diisi, tombol Google dinonaktifkan dan jalur tamu tersedia. Login Google hanya meminta identitas profil dan email. Akses kotak masuk Gmail dan sinkronisasi simpanan antarperangkat belum termasuk di trial.
+
+### Penjelasan AI untuk rekomendasi tanaman
+
+Simpan project API key OpenAI sebagai `OPENAI_API_KEY` di `.env` pada PC server. Model default `gpt-4.1-mini` bisa diubah melalui `OPENAI_MODEL` ke model yang mendukung Structured Outputs lewat Responses API. Restart Fastify dengan `npm --prefix server start` setelah mengubah konfigurasi.
+
+Di Automotion, masuk Google, buka **Rekomendasi Tanaman**, jalankan **Analisis tanaman**, lalu pilih **Jelaskan hasil dengan AI**. Data yang dikirim berupa luas, kondisi tanah dan air, ringkasan iklim, dan hasil screening yang dihitung server. Nama profil, koordinat patok, dan data akun tidak dikirim. Analisis berbasis aturan tetap dapat digunakan ketika layanan AI gagal atau belum dikonfigurasi.
