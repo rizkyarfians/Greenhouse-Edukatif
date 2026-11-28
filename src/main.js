@@ -4,7 +4,6 @@ import './dashboard-workspace.css';
 import './theme.js';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
 import {detailedCrops} from './detailed-crops.js';
-import {cropChoices} from './land-type.js';
 import {dashboardAccount} from './dashboard-account.js';
 import {accountSimulationStore, storageError} from './account-storage-api.js';
 import {browserSimulationStore, storagePrefix} from './simulation-storage.js';
@@ -46,8 +45,6 @@ const landInputs = [...document.querySelectorAll('input[name=land-type]')];
 const projectName = get('project-name');
 const cropSelect = get('simulation-crop');
 const modelChoices = Object.entries(detailedCrops).map(([id, crop]) => ({...crop, id}));
-const availableCrops = type => cropChoices(modelChoices, landTypes[type].scanType);
-const supportsCrop = (type, id) => availableCrops(type).some(crop => crop.id === id);
 const dateFormat = new Intl.DateTimeFormat('id-ID', {
   dateStyle: 'medium',
   timeStyle: 'short',
@@ -163,7 +160,12 @@ async function openProject(project) {
   window.scrollTo(0, 0);
   try {
     if (project.cropId) {
-      get('crop-view-title').textContent = 'Kebun ' + detailedCrops[project.cropId].name + ' 3D';
+      const greenhouse = project.type === 'greenhouse';
+      get('crop-view-title').textContent = (greenhouse ? 'Greenhouse ' : 'Kebun ') + detailedCrops[project.cropId].name + ' 3D';
+      get('crop-greenhouse-controls').hidden = !greenhouse;
+      get('toggle-crop-roof').disabled = true;
+      get('toggle-crop-drip').disabled = true;
+      get('crop-drip-status').textContent = '';
       get('crop-view-caption').textContent = 'Memuat kebun…';
       get('crop-bed-count').textContent = '';
       get('reset-crop-view').disabled = true;
@@ -173,7 +175,7 @@ async function openProject(project) {
       if (activeProject !== project) return;
       const garden = await module.loadCropGarden(project.cropId, landType.scanType);
       if (activeProject !== project) return;
-      simulation = module.openCropGarden(garden);
+      simulation = module.openCropGarden(garden, {greenhouse});
     } else {
       const module = await landType.load();
       if (activeProject !== project) return;
@@ -197,8 +199,8 @@ function updateLandActions() {
   const type = selectedLandType();
   const previous = cropSelect.value;
   cropSelect.replaceChildren(new Option(type === 'greenhouse' ? 'Melon' : 'Padi', ''),
-    ...availableCrops(type).map(crop => new Option(crop.name, crop.id)));
-  cropSelect.value = supportsCrop(type, previous) ? previous : '';
+    ...modelChoices.map(crop => new Option(crop.name, crop.id)));
+  cropSelect.value = Object.hasOwn(detailedCrops, previous) ? previous : '';
   projectName.placeholder = defaultName(type, cropSelect.value);
   updateScanLinks(type);
 }

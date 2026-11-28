@@ -147,3 +147,11 @@
   .crop-stage .section-head { flex-wrap: wrap; }
   #crop-viewport { height: clamp(290px, 94vw, 470px); }
 }
+
+.crop-greenhouse-controls { border-bottom: 1px solid var(--app-border); }
+.crop-greenhouse-controls strong { color: var(--app-ink); }
+.crop-greenhouse-controls p { margin-top: 2px; }
+@media (max-width: 540px) {
+  .crop-greenhouse-controls { flex-wrap: wrap; }
+  .crop-greenhouse-controls .crop-view-actions { justify-content: flex-start; }
+}

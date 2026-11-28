@@ -12,7 +12,7 @@ export function readProject(id, data) {
   if (!['greenhouse', 'rice'].includes(type) || !state || typeof state !== 'object' || Array.isArray(state)) return null;
   const result = {id, name, type, updatedAt};
   if (cropId !== undefined) {
-    if (typeof cropId !== 'string' || !Object.hasOwn(detailedCrops, cropId) || (type === 'greenhouse' && cropId === 'maize')) return null;
+    if (typeof cropId !== 'string' || !Object.hasOwn(detailedCrops, cropId)) return null;
     return {...result, cropId, state: {}};
   }
   if (type === 'rice') {

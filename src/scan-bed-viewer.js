@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {canvasRenderer} from './canvas-renderer.js';
 import {createCropGeometry, createCropMaterial} from './crop-models.js';
+import {greenhouseStructure} from './greenhouse-structure.js';
 import {previewBeds} from './scan-beds.js';
 
 function footprint(points) {
@@ -31,7 +32,7 @@ function roundedBed(width, length, height) {
   return geometry;
 }
 
-export function openBedViewer(viewport, measurement, crops) {
+export function openBedViewer(viewport, measurement, crops, {greenhouse = false} = {}) {
   const layout = previewBeds(measurement.xy, Math.max(...crops.map(crop => crop.spacing[0])));
   let renderer, webgl = true;
   try {
@@ -55,6 +56,7 @@ export function openBedViewer(viewport, measurement, crops) {
       {depth: .22, bevelEnabled: false}).rotateX(-Math.PI / 2).translate(0, -.22, 0),
     makeMaterial(0xc3a984),
   );
+  ground.name = 'Floor_BedFoundation';
   ground.receiveShadow = true;
   group.add(ground);
 
@@ -68,6 +70,10 @@ export function openBedViewer(viewport, measurement, crops) {
     group.add(stake, tip);
   }
   const transforms = new Map();
+  const hose = greenhouse && makeMaterial(0x244c56);
+  const dripPhases = greenhouse ? Array.from({length: 4}, () => makeMaterial(0x49768c)) : [];
+  const dripGeo = greenhouse && new THREE.SphereGeometry(.038, 6, 4);
+  let maxPlantHeight = 0;
   let featured = 0;
   for (const bed of layout.beds) {
     const width = bed.width * scale, length = (bed.to - bed.from) * scale;
@@ -79,6 +85,13 @@ export function openBedViewer(viewport, measurement, crops) {
 
     const crop = crops[bed.row % crops.length];
     const count = Math.max(1, Math.min(webgl ? 10 : 4, Math.floor((bed.to - bed.from) / crop.spacing[1])));
+    const tubeX = mesh.position.x + width * .21;
+    if (greenhouse) {
+      const pipe = new THREE.Mesh(new THREE.CylinderGeometry(.025, .025, length * .96, 6), hose);
+      pipe.rotation.x = Math.PI / 2;
+      pipe.position.set(tubeX, height + .028, mesh.position.z);
+      group.add(pipe);
+    }
     for (let i = 0; i < count; i++) {
       const obj = new THREE.Object3D();
       const fraction = (i + .5) / count;
@@ -88,6 +101,11 @@ export function openBedViewer(viewport, measurement, crops) {
       obj.rotation.y = crop.id === 'cucumber' ? 0 : i * 2.4 + bed.row * .8;
       obj.scale.setScalar(Math.min(width * .86, (length / count) * .90) * growth);
       obj.updateMatrix();
+      if (greenhouse) {
+        const emitter = new THREE.Mesh(dripGeo, dripPhases[i % dripPhases.length]);
+        emitter.position.set(tubeX, height + .06, obj.position.z);
+        group.add(emitter);
+      }
       const detail = webgl && i === count - 1 && featured < 10;
       if (detail) featured++;
       const key = crop.id + ':' + detail;
@@ -99,6 +117,11 @@ export function openBedViewer(viewport, measurement, crops) {
   const foliage = createCropMaterial();
   for (const {id, detail, matrices} of transforms.values()) {
     const geometry = createCropGeometry(id, {detail});
+    if (greenhouse) {
+      for (const matrix of matrices) {
+        maxPlantHeight = Math.max(maxPlantHeight, geometry.boundingBox.max.y * matrix.elements[5] + matrix.elements[13]);
+      }
+    }
     if (webgl) {
       const plants = new THREE.InstancedMesh(geometry, foliage, matrices.length);
       matrices.forEach((matrix, index) => plants.setMatrixAt(index, matrix));
@@ -113,6 +136,10 @@ export function openBedViewer(viewport, measurement, crops) {
       }
     }
   }
+
+  const house = greenhouse && greenhouseStructure(layout.polygon.map(([x, y]) => [x * scale, -y * scale]),
+    Math.max(2.8, (maxPlantHeight + .45) / .77), webgl);
+  if (house) group.add(house.group);
 
   scene.add(new THREE.HemisphereLight(0xfff5dc, 0x776b55, 2.1));
   const sun = new THREE.DirectionalLight(0xffe5bb, 2.35);
@@ -170,11 +197,36 @@ export function openBedViewer(viewport, measurement, crops) {
   const observer = new ResizeObserver(resize);
   observer.observe(viewport);
   reset();
+  let animation = 0, lastFrame = -Infinity;
+  const showDrip = phase => {
+    dripPhases.forEach((material, i) => material.color.setHex(i === phase ? 0x78dafa : 0x49768c));
+    render();
+  };
+  function animate(now) {
+    if (now - lastFrame >= 130) {
+      showDrip(Math.floor(now / 160) % dripPhases.length);
+      lastFrame = now;
+    }
+    animation = requestAnimationFrame(animate);
+  }
+
   controls.addEventListener('change', render);
   return {
     beds: layout.beds.length,
     reset,
+    setRoof(visible) {
+      if (!house) return;
+      house.roof.visible = visible;
+      render();
+    },
+    setDrip(running) {
+      if (!house || !layout.beds.length) return;
+      cancelAnimationFrame(animation);
+      if (running) animation = requestAnimationFrame(animate);
+      else showDrip(-1);
+    },
     dispose() {
+      cancelAnimationFrame(animation);
       observer.disconnect();
       controls.dispose();
       const geometries = new Set([stakeGeo, stakeTip]);

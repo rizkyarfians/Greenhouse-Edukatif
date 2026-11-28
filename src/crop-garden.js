@@ -27,14 +27,15 @@ function sampleGarden(crop, note) {
   return {crop, measurement: {xy}, label: 'Kebun contoh · ' + note};
 }
 
-export function openCropGarden({crop, measurement, label}) {
+export function openCropGarden({crop, measurement, label}, {greenhouse}) {
   const viewport = document.getElementById('crop-viewport');
   const reset = document.getElementById('reset-crop-view');
-  const viewer = openBedViewer(viewport, measurement, [crop]);
+  const viewer = openBedViewer(viewport, measurement, [crop], {greenhouse});
   const name = detailedCrops[crop.id].name;
   const canvas = viewport.querySelector('canvas');
   canvas.dataset.crop = crop.id;
-  canvas.setAttribute('aria-label', 'Model 3D kebun ' + name);
+  canvas.dataset.environment = greenhouse ? 'greenhouse' : 'open-field';
+  canvas.setAttribute('aria-label', 'Model 3D ' + (greenhouse ? 'greenhouse ' : 'kebun terbuka ') + name);
   document.getElementById('crop-view-caption').textContent = label;
   document.getElementById('crop-bed-count').textContent = viewer.beds
     ? viewer.beds.toLocaleString('id-ID') + ' bedengan contoh'
@@ -42,10 +43,41 @@ export function openCropGarden({crop, measurement, label}) {
   reset.disabled = false;
   reset.addEventListener('click', viewer.reset);
 
+  const roof = document.getElementById('toggle-crop-roof');
+  const drip = document.getElementById('toggle-crop-drip');
+  const status = document.getElementById('crop-drip-status');
+  let roofVisible = true;
+  let running = false;
+
+  function toggleRoof() {
+    roofVisible = !roofVisible;
+    viewer.setRoof(roofVisible);
+    roof.textContent = roofVisible ? 'Sembunyikan atap' : 'Tampilkan atap';
+  }
+
+  function toggleDrip() {
+    running = !running;
+    viewer.setDrip(running);
+    drip.textContent = running ? 'Hentikan drip' : 'Jalankan drip';
+    status.textContent = running ? 'Simulasi aliran aktif.' : 'Simulasi aliran mati.';
+  }
+
+  if (greenhouse) {
+    roof.textContent = 'Sembunyikan atap';
+    drip.textContent = 'Jalankan drip';
+    status.textContent = viewer.beds ? 'Simulasi aliran mati.' : 'Butuh bedengan untuk menjalankan irigasi.';
+    roof.disabled = false;
+    drip.disabled = !viewer.beds;
+    roof.addEventListener('click', toggleRoof);
+    drip.addEventListener('click', toggleDrip);
+  }
+
   return {
     snapshotSimulation: () => ({}),
     pauseSimulation() {
       reset.removeEventListener('click', viewer.reset);
+      roof.removeEventListener('click', toggleRoof);
+      drip.removeEventListener('click', toggleDrip);
       viewer.dispose();
     },
   };

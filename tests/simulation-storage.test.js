@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {detailedCrops} from '../src/detailed-crops.js';
 import {browserSimulationStore, readProject, storagePrefix} from '../src/simulation-storage.js';
 
 const id = '0123456789abcdef0123456789abcdef';
@@ -20,11 +21,19 @@ test('reads legacy greenhouse, rice, and the selected crop with a canonical stat
     {...rice, cropId: 'maize', state: {}});
 });
 
+test('restores all modeled crops for both environments', () => {
+  for (const type of ['greenhouse', 'rice']) {
+    for (const cropId of Object.keys(detailedCrops)) {
+      const project = {...greenhouse, type, cropId, state: {}};
+      assert.deepEqual(readProject(id, project), project);
+    }
+  }
+});
+
 test('rejects invalid records and prototype keys', () => {
   for (const value of [
     {...greenhouse, state: {}},
     {...greenhouse, state: []},
-    {...greenhouse, cropId: 'maize'},
     {...greenhouse, cropId: ['chili']},
     {...greenhouse, cropId: '__proto__'},
     {...greenhouse, type: 'constructor'},
