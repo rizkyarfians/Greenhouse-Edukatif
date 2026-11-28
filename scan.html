@@ -4,29 +4,65 @@
 <header class="ls-header"><a href="./dashboard.html">← Beranda</a><strong>Automotion</strong><button class="theme-toggle" type="button" data-theme-toggle role="switch" aria-label="Mode gelap" aria-checked="false" hidden><span aria-hidden="true"></span></button></header>
 <main class="ls-shell">
 <section class="ls-intro"><h1>Scan lahan</h1><p>Datangi tiap patok secara berurutan, lalu rekam posisi GPS dari HP.</p></section>
-<div class="ls-grid"><section class="ls-card">
-<h2>Rekam patok</h2><label>Jenis budidaya<select id="land-type"><option value="open-field">Lahan terbuka</option><option value="greenhouse">Greenhouse</option></select></label><p class="ls-note">Untuk greenhouse, ukur area tapak yang tersedia.</p><div class="ls-actions"><button id="camera-toggle" type="button">Buka kamera</button><button id="gps-add" class="secondary" type="button">+ Tambah patok GPS</button></div>
+<div class="ls-grid scan-layout">
+<section class="ls-card" aria-labelledby="scan-record-title">
+<h2 id="scan-record-title">Rekam patok</h2><label>Jenis budidaya<select id="land-type"><option value="open-field">Lahan terbuka</option><option value="greenhouse">Greenhouse</option></select></label><p class="ls-note">Untuk greenhouse, ukur area tapak yang tersedia.</p><div class="ls-actions"><button id="camera-toggle" type="button">Buka kamera</button><button id="gps-add" class="secondary" type="button">+ Tambah patok GPS</button></div>
 <p class="ls-note">Rekam saat HP berada di dekat patok. Titik awal cukup direkam sekali.</p>
 <p id="status" role="status" aria-live="polite" class="ls-status"></p>
 <details><summary>Input koordinat / koreksi manual</summary><form id="manual-form"><div class="ls-fields"><label>Latitude<input id="lat" type="number" step="any" min="-85" max="85" required placeholder="-7.95"></label><label>Longitude<input id="lon" type="number" step="any" min="-180" max="180" required placeholder="112.63"></label></div><div class="ls-actions"><button id="manual-submit" type="submit" class="secondary">Tambah koordinat</button><button id="cancel-edit" type="button" class="secondary" hidden>Batal koreksi</button></div></form></details>
 <div class="ls-actions"><button id="undo" type="button" class="secondary">Hapus patok terakhir</button><button id="clear" type="button" class="secondary">Mulai ulang</button></div>
 <ol id="point-list" class="ls-points"></ol>
-</section><section class="ls-card"><div class="scan-sketch-head"><h2>Sketsa dan luas</h2><button id="jump-to-beds" class="secondary" type="button" disabled>Lihat bedengan 3D</button></div><p class="ls-note">Periksa urutan patok di sketsa.</p><svg id="diagram" viewBox="0 0 360 260" role="img" aria-label="Sketsa batas lahan"></svg>
-<div class="ls-stats"><div><small>Estimasi luas</small><strong id="area">—</strong><span id="hectare"></span></div><div><small>Estimasi keliling</small><strong id="perimeter">—</strong><span id="point-count">0 patok</span></div></div>
-<p id="quality" class="ls-status"></p><p id="geometry-status" role="status" class="ls-note"></p>
-<a id="map-link" target="_blank" rel="noopener noreferrer" hidden>Lihat lokasi di OpenStreetMap ↗</a>
-<h2>Simpan profil</h2><label>Nama lahan<input id="project-name" maxlength="80" placeholder="Contoh: Lahan 001"></label><div class="ls-actions"><button id="save" type="button" disabled>Simpan patok</button><button id="restore" class="secondary" type="button" disabled>Buka simpanan</button><button id="import-browser-land" class="secondary" type="button" hidden>Buka patok lama dari browser</button><button id="download" class="secondary" type="button" disabled>Ekspor GeoJSON</button><button id="delete-save" class="secondary" type="button" disabled>Hapus simpanan</button></div><p id="storage-description" class="ls-note">Tekan Simpan patok sebelum menutup halaman.</p><p id="save-status" role="status" class="ls-note"></p><p><a href="./climate.html">Lanjut ke analisis iklim →</a></p>
-<p class="ls-note">Gunakan profil dengan polygon valid untuk analisis iklim.</p></section></div>
-<details id="scan-beds" class="ls-card scan-beds">
-  <summary>Pratinjau bedengan 3D</summary>
-  <div class="scan-beds-controls">
-    <label for="bed-crop">Tanaman <select id="bed-crop"></select></label>
-    <button id="reset-bed-camera" class="secondary" type="button" disabled>Atur ulang sudut</button>
+</section>
+<section class="ls-card" aria-labelledby="scan-sketch-title">
+  <h2 id="scan-sketch-title">Sketsa</h2>
+  <p class="ls-note">Periksa urutan patok di sketsa.</p>
+  <svg id="diagram" viewBox="0 0 360 260" role="img" aria-label="Sketsa batas lahan"></svg>
+</section>
+
+<section class="ls-card scan-results" aria-label="Hasil scan lahan">
+  <div class="ls-grid scan-results-grid">
+    <section aria-labelledby="scan-estimate-title">
+      <h2 id="scan-estimate-title">Estimasi lahan</h2>
+      <div class="ls-stats">
+        <div><small>Estimasi luas</small><strong id="area">—</strong><span id="hectare"></span></div>
+        <div><small>Estimasi keliling</small><strong id="perimeter">—</strong><span id="point-count">0 patok</span></div>
+      </div>
+      <p id="quality" class="ls-status"></p>
+      <p id="geometry-status" role="status" class="ls-note"></p>
+      <div class="ls-actions scan-estimate-actions">
+        <a id="map-link" target="_blank" rel="noopener noreferrer" hidden>Lihat lokasi di OpenStreetMap ↗</a>
+        <button id="jump-to-beds" class="secondary" type="button" disabled>Lihat bedengan 3D</button>
+      </div>
+    </section>
+    <section aria-labelledby="scan-profile-title">
+      <h2 id="scan-profile-title">Simpan profil</h2>
+      <label>Nama lahan<input id="project-name" maxlength="80" placeholder="Contoh: Lahan 001"></label>
+      <div class="ls-actions">
+        <button id="save" type="button" disabled>Simpan patok</button>
+        <button id="restore" class="secondary" type="button" disabled>Buka simpanan</button>
+        <button id="import-browser-land" class="secondary" type="button" hidden>Buka patok lama dari browser</button>
+        <button id="download" class="secondary" type="button" disabled>Ekspor GeoJSON</button>
+        <button id="delete-save" class="secondary" type="button" disabled>Hapus simpanan</button>
+      </div>
+      <p id="storage-description" class="ls-note">Tekan Simpan patok sebelum menutup halaman.</p>
+      <p id="save-status" role="status" class="ls-note"></p>
+      <p><a href="./climate.html">Lanjut ke analisis iklim →</a></p>
+      <p class="ls-note">Gunakan profil dengan polygon valid untuk analisis iklim.</p>
+    </section>
   </div>
-  <div id="bed-viewport" class="bed-viewport model-stage" hidden></div>
-  <p id="bed-status" class="ls-status" role="status"></p>
-  <p class="ls-note">Geser untuk memutar, cubit atau gulir untuk memperbesar. Bedengan dan tahap tumbuh bersifat ilustratif, mengikuti batas patok pada lahan datar.</p>
-</details>
+
+  <details id="scan-beds" class="scan-beds">
+    <summary>Pratinjau bedengan 3D</summary>
+    <div class="scan-beds-controls">
+      <label for="bed-crop">Tanaman <select id="bed-crop"></select></label>
+      <button id="reset-bed-camera" class="secondary" type="button" disabled>Atur ulang sudut</button>
+    </div>
+    <div id="bed-viewport" class="bed-viewport model-stage" hidden></div>
+    <p id="bed-status" class="ls-status" role="status"></p>
+    <p class="ls-note">Geser untuk memutar, cubit atau gulir untuk memperbesar. Bedengan dan tahap tumbuh bersifat ilustratif, mengikuti batas patok pada lahan datar.</p>
+  </details>
+</section>
+</div>
 </main>
 <dialog id="camera-dialog" class="ls-camera" aria-labelledby="camera-title">
   <video id="camera" autoplay muted playsinline></video>

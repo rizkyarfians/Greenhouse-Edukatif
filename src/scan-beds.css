@@ -1,13 +1,12 @@
-.scan-sketch-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  justify-content: space-between;
-}
-.scan-sketch-head h2 { margin: 0; }
+.ls-grid.scan-layout { align-items: stretch; }
+.scan-results { grid-column: 1 / -1; }
+.ls-grid.scan-results-grid { column-gap: 28px; }
+.scan-estimate-actions { align-items: center; }
+.scan-estimate-actions #map-link { margin: 0; }
+
 .scan-beds {
-  margin-top: 18px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px solid var(--app-border);
   scroll-margin-top: 12px;
 }
