@@ -6,24 +6,7 @@
 
 [hidden] { display: none !important; }
 .shell { max-width: 1400px; padding-inline: clamp(16px, 4vw, 56px); }
-.topbar { background: var(--app-surface); }
-.brand-row { min-height: 68px; }
-.brand { font-size: 19px; letter-spacing: -.035em; }
-.brand-icon { background: var(--app-dark); color: var(--app-lime); height: 36px; width: 36px; border-radius: 11px; }
-.brand-icon svg { width: 21px; height: 21px; }
-.account-nav .demo { display: block; background: var(--app-sage); color: var(--app-dark); }
-.account-nav a { color: var(--app-dark); text-decoration: none; }
-.account-nav a:hover { text-decoration: underline; }
-
-.home-nav { display: flex; align-items: center; padding: 4px; gap: 3px; border-radius: 99px; background: #eef1e9; }
-.home-nav a {
-  display: flex; align-items: center; gap: 7px; border-radius: 99px;
-  color: var(--app-ink); font-size: 14px; font-weight: 650; text-decoration: none; padding: 8px 13px;
-}
-.home-nav a:hover { background: #e1e8d7; }
-.home-nav a[aria-current] { background: var(--app-dark); color: #f5f8ee; }
-.home-nav svg, [data-workspace-icon] svg { width: 17px; height: 17px; }
-#dashboard-content:has(#guest-home[hidden]) .home-nav { visibility: hidden; }
+[data-workspace-icon] svg { width: 17px; height: 17px; }
 
 .guest-home { padding: clamp(22px, 3.5vw, 45px) 0 36px; }
 #home-title { margin-bottom: clamp(16px, 2.2vw, 25px); font-size: clamp(31px, 4.2vw, 52px); }
@@ -165,33 +148,17 @@
 @media (max-width: 850px) {
   .layout-setup { grid-template-columns: minmax(0, 1fr) minmax(265px, 315px); gap: 12px; }
   .plot-preview, .home-copy { padding: 18px; }
-  .home-nav a { padding-inline: 10px; }
 }
 
 @media (max-width: 680px) {
   .shell { padding-inline: 14px; }
-  .brand-row { min-height: 62px; }
   .home-actions, .layout-setup, .dashboard { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .layout-dialog { width: calc(100% - 20px); max-height: calc(100dvh - 20px); }
   .plot-preview { min-height: 0; border-radius: 20px; }
   .plot-preview img { height: clamp(160px, 55vw, 320px); }
   .home-copy, .saved-projects { border-radius: 20px; padding: 16px; }
-  .saved-projects { scroll-margin-bottom: 95px; }
   .saved-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .guest-home { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
-  .home-nav {
-    position: fixed; z-index: 5; left: 50%; bottom: max(12px, env(safe-area-inset-bottom, 0px));
-    transform: translateX(-50%); background: var(--app-dark); box-shadow: 0 6px 18px #1f312b42;
-    max-width: calc(100vw - 24px); padding: 5px;
-  }
-  .home-nav a { min-height: 44px; color: #f4f7ed; font-size: 13px; white-space: nowrap; }
-  .home-nav a[aria-current], .home-nav a:hover { background: var(--app-lime); color: var(--app-dark); }
   .simulation-intro { align-items: start; }
-}
-
-@media (max-width: 370px) {
-  .home-nav a { padding-inline: 8px; gap: 4px; }
-  .home-nav svg { width: 15px; height: 15px; }
 }
 
 #crop-viewport {

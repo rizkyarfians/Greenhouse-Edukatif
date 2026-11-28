@@ -6,7 +6,7 @@ import './land-scanner.css';
 import './workspace-theme.css';
 import './farm.css';
 import './workflow-theme.css';
-import './theme.js';
+import './app-header.js';
 import {measure} from './land-geometry.js';
 import {allCrops} from './crop-database.js';
 import {landType,cropChoices,sameLandType} from './land-type.js';

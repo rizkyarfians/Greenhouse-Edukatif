@@ -15,8 +15,6 @@ button.theme-toggle {
 button.theme-toggle:hover { background: var(--app-border); }
 button.theme-toggle[hidden] { display: none; }
 .theme-toggle svg { display: block; width: 19px; height: 19px; }
-.login-brand-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-.login-brand-row .brand { margin: 0; }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -47,7 +45,7 @@ button.theme-toggle[hidden] { display: none; }
   outline-color: var(--theme-focus);
 }
 
-[data-theme="dark"] :is(.ls-shell a, .ls-header > a, .account-nav a, .back-home, .crop-view-actions a) {
+[data-theme="dark"] :is(.ls-shell a, .back-home, .crop-view-actions a) {
   color: var(--app-dark);
 }
 [data-theme="dark"] :is(.ls-card, .cl-metric, .rc-card, .zone-card, .scene-badge, .icon-button, .saved-project) {
@@ -69,7 +67,7 @@ button.theme-toggle[hidden] { display: none; }
 [data-theme="dark"] :is(.ls-points li, .ls-card details, .rc-weights div, .zone-stats, .zone-simulation) {
   border-color: var(--app-border);
 }
-[data-theme="dark"] :is(.ls-status, .farm-detail, .farm-stats > div, .rc-stats > div, .zone-simulation, .stage .viewer-bar, .home-nav, .tile-icon, .land-icon, .bar, .cl-bar) {
+[data-theme="dark"] :is(.ls-status, .farm-detail, .farm-stats > div, .rc-stats > div, .zone-simulation, .stage .viewer-bar, .tile-icon, .land-icon, .bar, .cl-bar) {
   background: var(--app-sage);
   color: var(--app-ink);
 }
@@ -92,19 +90,18 @@ button.theme-toggle[hidden] { display: none; }
 [data-theme="dark"] :is(.secondary-button:hover:enabled, .ls-card button.secondary:hover:enabled, .viewer-bar button:hover:enabled) {
   background: var(--theme-active);
 }
-[data-theme="dark"] :is(.ls-card button[aria-pressed="true"], .home-nav a[aria-current]) {
+[data-theme="dark"] :is(.ls-card button[aria-pressed="true"]) {
   background: var(--app-dark);
   color: var(--theme-on-accent);
   border-color: var(--app-dark);
 }
-[data-theme="dark"] .home-nav a:not([aria-current]):hover { background: var(--theme-active); color: var(--app-ink); }
 [data-theme="dark"] .land-card { background: var(--theme-control); border-color: var(--app-border); }
 [data-theme="dark"] :is(.land-option input:checked + .land-card, .zones input:checked + span) {
   background: var(--theme-active);
   border-color: #779766;
   color: var(--app-ink);
 }
-[data-theme="dark"] :is(.land-option input:checked + .land-card .land-icon, .brand-icon, #login-brand-icon) {
+[data-theme="dark"] :is(.land-option input:checked + .land-card .land-icon) {
   background: var(--app-lime);
   color: var(--theme-on-accent);
 }
@@ -126,22 +123,3 @@ button.theme-toggle[hidden] { display: none; }
 }
 [data-theme="dark"] .fallback { mix-blend-mode: normal; }
 [data-theme="dark"] #diagram { background: #14221a; border-color: var(--app-border); }
-
-@media (max-width: 400px) {
-  .brand-row { gap: 8px; }
-  .brand-row .brand { gap: 6px; font-size: 16px; }
-  .brand-row .brand-icon { width: 30px; height: 30px; }
-  .brand-row .account-nav { flex-wrap: nowrap; gap: 5px; }
-  .brand-row .account-nav .demo { max-width: 72px; padding: 4px 6px; font-size: 11px; }
-  .brand-row .account-nav :is(a, #account-logout) { font-size: 13px; }
-  .brand-row #account-logout { padding-inline: 8px; }
-  .brand-row #account-status:not(:empty) {
-    position: absolute;
-    top: 65px;
-    right: 14px;
-    z-index: 5;
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: var(--app-surface);
-  }
-}

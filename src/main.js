@@ -2,13 +2,12 @@ import './style.css';
 import './workspace-theme.css';
 import './dashboard-workspace.css';
 import './device-layout.css';
-import './theme.js';
+import {setHeaderSection} from './app-header.js';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
 import {detailedCrops} from './detailed-crops.js';
 import {dashboardAccount} from './dashboard-account.js';
 import {accountSimulationStore, storageError} from './account-storage-api.js';
 import {browserSimulationStore, storagePrefix, validLayoutPreview} from './simulation-storage.js';
-import dashboardIcon from 'lucide-static/icons/layout-dashboard.svg?raw';
 import scanIcon from 'lucide-static/icons/scan-line.svg?raw';
 import folderIcon from 'lucide-static/icons/folder.svg?raw';
 import boxIcon from 'lucide-static/icons/box.svg?raw';
@@ -73,35 +72,35 @@ function localProjects() {
   }
 }
 
-document.querySelector('.brand-icon').innerHTML = sprout;
-document.querySelector('.brand-icon').setAttribute('aria-hidden', 'true');
 document.querySelector('[data-land-icon=greenhouse]').innerHTML = greenhouseIcon;
 document.querySelector('[data-land-icon=rice]').innerHTML = sprout;
 
 const workspaceIcons = {
-  'layout-dashboard': dashboardIcon, 'scan-line': scanIcon, folder: folderIcon,
+  'scan-line': scanIcon, folder: folderIcon,
   box: boxIcon, map: mapIcon, 'chevron-left': chevronLeft, save: saveIcon,
 };
 for (const icon of document.querySelectorAll('[data-workspace-icon]')) {
   icon.innerHTML = workspaceIcons[icon.dataset.workspaceIcon];
 }
 
-const homeLinks = [...document.querySelectorAll('.home-nav a[href^="#"]')];
 function updateHomeNavigation(focus = false) {
   const layouts = location.hash === '#saved-title';
   const active = layouts ? '#saved-title' : '#home-title';
   get('home-view').hidden = layouts;
   get('layouts-view').hidden = !layouts;
-  for (const link of homeLinks) {
-    if (link.hash === active) link.setAttribute('aria-current', 'location');
-    else link.removeAttribute('aria-current');
-  }
+  setHeaderSection(layouts ? 'layout' : 'home');
   if (focus && !home.hidden) {
     document.querySelector(active).focus({preventScroll: true});
     window.scrollTo(0, 0);
   }
 }
-window.addEventListener('hashchange', () => updateHomeNavigation(true));
+window.addEventListener('hashchange', event => {
+  if (activeProject && !closeProject()) {
+    history.replaceState(history.state, '', event.oldURL);
+    return;
+  }
+  updateHomeNavigation(true);
+});
 updateHomeNavigation();
 
 function selectedLandType() {
@@ -193,6 +192,7 @@ async function openProject(project) {
   get('rice-dashboard').hidden = Boolean(project.cropId) || project.type !== 'rice';
   get('crop-dashboard').hidden = !project.cropId;
   home.hidden = true;
+  setHeaderSection('layout');
   simulationView.hidden = false;
   get('simulation-title').focus();
   window.scrollTo(0, 0);
@@ -309,17 +309,41 @@ saveButton.addEventListener('click', async () => {
   }
 });
 
-backButton.addEventListener('click', () => {
-  if (!saveButton.disabled && JSON.stringify(layoutSnapshot()) !== lastSavedState &&
-      !window.confirm('Ada perubahan yang belum disimpan. Kembali ke beranda?')) return;
+function canLeaveProject() {
+  if (backButton.disabled) return false;
+  return saveButton.disabled || JSON.stringify(layoutSnapshot()) === lastSavedState ||
+    window.confirm('Ada perubahan yang belum disimpan. Tinggalkan simulasi?');
+}
+
+function closeProject() {
+  if (!canLeaveProject()) return false;
   deviceLayout?.close();
   simulation?.pauseSimulation();
   activeProject = undefined;
   simulationView.hidden = true;
   home.hidden = false;
   renderSavedProjects();
+  return true;
+}
+
+backButton.addEventListener('click', () => {
+  if (!closeProject()) return;
   history.replaceState(history.state, '', '#home-title');
   updateHomeNavigation(true);
+});
+
+document.querySelector('[data-app-header]').addEventListener('click', event => {
+  const link = event.target.closest('a');
+  if (!activeProject || !link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  const dashboardLink = link.getAttribute('href').startsWith('#');
+  if (dashboardLink) {
+    event.preventDefault();
+    if (!closeProject()) return;
+    if (location.hash !== link.hash) history.pushState(history.state, '', link.hash);
+    updateHomeNavigation(true);
+  } else if (!canLeaveProject()) {
+    event.preventDefault();
+  }
 });
 
 retrySaved.addEventListener('click', renderSavedProjects);

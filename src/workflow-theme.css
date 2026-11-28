@@ -1,8 +1,4 @@
 :root { background: var(--app-bg); color: var(--app-ink); }
-.ls-header { background: var(--app-surface); border-color: var(--app-border); min-height: 64px; }
-.ls-header strong { letter-spacing: -.02em; }
-.ls-header > a { color: var(--app-dark); text-decoration: none; }
-.ls-header > a:hover { text-decoration: underline; }
 .ls-shell { padding-top: clamp(20px, 4vw, 44px); }
 .ls-card { background: var(--app-surface); border-color: var(--app-border); }
 .ls-note { color: var(--app-muted); }
@@ -14,3 +10,5 @@
 #save { background: var(--app-lime); color: var(--app-ink); border-color: #93a473; }
 #save:enabled:hover { background: #e4f3ba; }
 #farm-view { border-color: var(--app-border); }
+
+.workflow-back { display: inline-block; margin-bottom: 10px; font-size: 14px; }

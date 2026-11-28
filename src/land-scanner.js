@@ -2,7 +2,7 @@ import './land-scanner.css';
 import './workspace-theme.css';
 import './workflow-theme.css';
 import './scan-beds.css';
-import './theme.js';
+import './app-header.js';
 import {setupBedPreview} from './scan-bed-preview.js';
 import {browserLand, landStore} from './land-storage.js';
 import {storageError} from './account-storage-api.js';

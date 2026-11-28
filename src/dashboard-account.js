@@ -1,11 +1,6 @@
 import './dashboard-account.css';
-import { firebaseConfigured, loadFirebaseAuth } from './firebase-auth.js';
-import { currentSession } from './account-session.js';
-
-const label = document.getElementById('account-label');
-const login = document.getElementById('account-login');
-const logout = document.getElementById('account-logout');
-const status = document.getElementById('account-status');
+import {headerAccount, setHeaderAccount} from './app-header.js';
+import {currentSession} from './account-session.js';
 
 const content = document.getElementById('dashboard-content');
 const loading = document.getElementById('dashboard-loading');
@@ -15,19 +10,12 @@ function revealDashboard() {
   content.hidden = false;
 }
 
-function revealSession(session) {
-  label.textContent = session.name;
-  login.hidden = session.mode !== 'guest';
-  logout.hidden = session.mode === 'guest';
-  revealDashboard();
-}
-
-export const dashboardAccount = currentSession().catch(() => null).then(session => {
+export const dashboardAccount = headerAccount.then(session => {
   if (!session) {
     location.replace('./index.html');
     return null;
   }
-  revealSession(session);
+  revealDashboard();
   session.firebase?.watchUser(user => {
     if (user?.uid === session.uid) return;
     content.hidden = true;
@@ -47,24 +35,9 @@ window.addEventListener('pageshow', async event => {
     location.replace('./index.html');
   } else if (previous?.mode === current.mode && previous?.uid === current.uid &&
              previous?.mode !== 'server') {
-    revealSession(current);
+    setHeaderAccount(current);
+    revealDashboard();
   } else {
     location.reload();
-  }
-});
-
-logout.addEventListener('click', async () => {
-  logout.disabled = true;
-  try {
-    if (firebaseConfigured) {
-      await (await loadFirebaseAuth()).signOut();
-    } else {
-      const response = await fetch('/api/auth/logout', { method: 'POST' });
-      if (!response.ok) throw new Error('Logout failed');
-    }
-    location.replace('./index.html');
-  } catch {
-    status.textContent = 'Gagal keluar. Coba lagi.';
-    logout.disabled = false;
   }
 });
