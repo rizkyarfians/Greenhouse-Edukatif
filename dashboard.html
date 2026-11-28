@@ -26,12 +26,24 @@
   </div>
 </div></header>
 <main class="shell">
-  <section id="guest-home" class="guest-home" aria-labelledby="home-title">
-    <h1 id="home-title" tabindex="-1">Lahan dan simulasi</h1>
-    <section class="saved-projects" aria-labelledby="saved-title">
+  <div id="guest-home" class="guest-home">
+    <section id="home-view" aria-labelledby="home-title">
+      <h1 id="home-title" tabindex="-1">Lahan dan simulasi</h1>
+      <div class="home-actions">
+        <a class="home-action panel" id="home-scan" href="./scan.html?type=greenhouse">
+          <span class="home-action-icon" data-workspace-icon="scan-line" aria-hidden="true"></span>
+          <span><strong>Scan lahan</strong><small>Rekam patok dan ukur luas lahan.</small></span>
+        </a>
+        <a class="home-action panel" href="#saved-title">
+          <span class="home-action-icon" data-workspace-icon="folder" aria-hidden="true"></span>
+          <span><strong>Layout</strong><small>Buat simulasi 3D baru atau buka layout tersimpan.</small></span>
+        </a>
+      </div>
+    </section>
+    <section class="saved-projects" id="layouts-view" aria-labelledby="saved-title" hidden>
       <div class="saved-heading">
         <span class="saved-icon" data-workspace-icon="folder" aria-hidden="true"></span>
-        <div><h2 id="saved-title" tabindex="-1">Layout tersimpan</h2><p id="project-storage-label"></p></div>
+        <div><h1 id="saved-title" tabindex="-1">Layout tersimpan</h1><p id="project-storage-label"></p></div>
       </div>
       <p id="home-message" class="home-message" role="status"></p>
       <div class="saved-actions">
@@ -41,7 +53,7 @@
       <p id="import-status" role="status"></p>
       <ul class="saved-list" id="saved-list"></ul>
     </section>
-  </section>
+  </div>
 
   <section id="simulation-view" hidden aria-labelledby="simulation-title">
   <div class="intro simulation-intro">

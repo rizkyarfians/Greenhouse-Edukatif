@@ -85,14 +85,21 @@ for (const icon of document.querySelectorAll('[data-workspace-icon]')) {
 }
 
 const homeLinks = [...document.querySelectorAll('.home-nav a[href^="#"]')];
-function updateHomeNavigation() {
-  const active = location.hash === '#saved-title' ? '#saved-title' : '#home-title';
+function updateHomeNavigation(focus = false) {
+  const layouts = location.hash === '#saved-title';
+  const active = layouts ? '#saved-title' : '#home-title';
+  get('home-view').hidden = layouts;
+  get('layouts-view').hidden = !layouts;
   for (const link of homeLinks) {
     if (link.hash === active) link.setAttribute('aria-current', 'location');
     else link.removeAttribute('aria-current');
   }
+  if (focus && !home.hidden) {
+    document.querySelector(active).focus({preventScroll: true});
+    window.scrollTo(0, 0);
+  }
 }
-window.addEventListener('hashchange', updateHomeNavigation);
+window.addEventListener('hashchange', () => updateHomeNavigation(true));
 updateHomeNavigation();
 
 function selectedLandType() {
@@ -239,6 +246,7 @@ function updateScanLinks(type) {
   const scanPath = './scan.html?' + params;
   get('scan-selected-land').href = scanPath;
   get('nav-scan').href = scanPath;
+  get('home-scan').href = scanPath;
 }
 
 for (const input of landInputs) input.addEventListener('change', updateLandActions);
@@ -299,8 +307,8 @@ backButton.addEventListener('click', () => {
   simulationView.hidden = true;
   home.hidden = false;
   renderSavedProjects();
-  get('home-title').focus();
-  window.scrollTo(0, 0);
+  history.replaceState(history.state, '', '#home-title');
+  updateHomeNavigation(true);
 });
 
 retrySaved.addEventListener('click', renderSavedProjects);
