@@ -21,6 +21,7 @@ const get = id => document.getElementById(id);
 const home = get('guest-home');
 const simulationView = get('simulation-view');
 const savedList = get('saved-list');
+const layoutDialog = get('layout-dialog');
 const homeMessage = get('home-message');
 const saveButton = get('save-simulation');
 const saveMessage = get('save-message');
@@ -114,6 +115,7 @@ async function renderSavedProjects() {
     showSavedProjects(projects);
   } catch (error) {
     if (request !== listRequest) return;
+    showSavedProjects([]);
     homeMessage.textContent = storageError(error, 'memuat layout');
     retrySaved.hidden = false;
   }
@@ -161,11 +163,9 @@ function showSavedProjects(projects) {
     add.innerHTML = plusIcon;
     add.firstElementChild.setAttribute('aria-hidden', 'true');
     add.addEventListener('click', () => {
-      history.replaceState(history.state, '', '#plot-title');
-      updateHomeNavigation();
-      const title = get('plot-title');
-      title.focus({preventScroll: true});
-      title.scrollIntoView({block: 'start'});
+      layoutDialog.showModal();
+      get('new-layout-title').focus({preventScroll: true});
+      layoutDialog.scrollTop = 0;
     });
     row.append(add);
     savedList.append(row);
@@ -258,6 +258,7 @@ get('start-simulation').addEventListener('submit', event => {
   const id = Array.from(crypto.getRandomValues(new Uint32Array(4)), part =>
     part.toString(16).padStart(8, '0')).join('');
   projectName.value = '';
+  layoutDialog.close();
   openProject({id, name, type, cropId});
 });
 

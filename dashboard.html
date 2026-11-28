@@ -28,45 +28,6 @@
 <main class="shell">
   <section id="guest-home" class="guest-home" aria-labelledby="home-title">
     <h1 id="home-title" tabindex="-1">Lahan dan simulasi</h1>
-    <div class="home-hero">
-      <figure class="plot-preview model-stage">
-        <figcaption>
-          <div>
-            <h2>Greenhouse melon</h2>
-            <p>Pratinjau model 3D</p>
-          </div>
-          <span class="preview-icon" data-workspace-icon="box" aria-hidden="true"></span>
-        </figcaption>
-        <img src="./greenhouse-preview.png" width="1050" height="800" alt="Model greenhouse dengan rangka terbuka dan baris tanaman melon">
-        <a class="plan-link" href="./farm.html"><span data-workspace-icon="map" aria-hidden="true"></span>Rencana lahan 3D</a>
-      </figure>
-      <section class="home-copy panel" aria-labelledby="plot-title">
-        <h2 id="plot-title" tabindex="-1">Siapkan simulasi</h2>
-        <form id="start-simulation" class="start-simulation">
-          <fieldset class="land-options">
-            <legend>Jenis lahan</legend>
-            <label class="land-option">
-              <input type="radio" name="land-type" value="greenhouse" checked>
-              <span class="land-card"><span class="land-icon" data-land-icon="greenhouse" aria-hidden="true"></span><span><strong>Greenhouse</strong><small>Budidaya terlindung</small></span></span>
-            </label>
-            <label class="land-option">
-              <input type="radio" name="land-type" value="rice">
-              <span class="land-card"><span class="land-icon" data-land-icon="rice" aria-hidden="true"></span><span><strong>Lahan terbuka</strong><small>Budidaya di luar ruang</small></span></span>
-            </label>
-          </fieldset>
-          <label for="simulation-crop">Tanaman</label>
-          <select id="simulation-crop" name="crop" class="crop-select">
-            <option value="">Melon</option>
-          </select>
-          <details class="simulation-options">
-            <summary>Beri nama simulasi</summary>
-            <input id="project-name" name="project" aria-label="Nama simulasi" type="text" maxlength="60" placeholder="Kebun Melon">
-          </details>
-          <button class="primary-button start-button" type="submit"><span data-workspace-icon="box" aria-hidden="true"></span>Mulai simulasi 3D</button>
-          <a id="scan-selected-land" class="secondary-button" href="./scan.html?type=greenhouse"><span data-workspace-icon="scan-line" aria-hidden="true"></span>Scan lahan</a>
-        </form>
-      </section>
-    </div>
     <section class="saved-projects" aria-labelledby="saved-title">
       <div class="saved-heading">
         <span class="saved-icon" data-workspace-icon="folder" aria-hidden="true"></span>
@@ -192,6 +153,53 @@
   </div>
   </section>
 </main>
+<dialog id="layout-dialog" class="layout-dialog panel" aria-labelledby="new-layout-title">
+  <div class="layout-dialog-head">
+    <h2 id="new-layout-title" tabindex="-1">Layout baru</h2>
+    <form method="dialog">
+      <button type="submit" class="secondary-button">Tutup</button>
+    </form>
+  </div>
+    <div class="layout-setup">
+      <figure class="plot-preview model-stage">
+        <figcaption>
+          <div>
+            <h2>Greenhouse melon</h2>
+            <p>Pratinjau model 3D</p>
+          </div>
+          <span class="preview-icon" data-workspace-icon="box" aria-hidden="true"></span>
+        </figcaption>
+        <img src="./greenhouse-preview.png" width="1050" height="800" loading="lazy" alt="Model greenhouse dengan rangka terbuka dan baris tanaman melon">
+        <a class="plan-link" href="./farm.html"><span data-workspace-icon="map" aria-hidden="true"></span>Rencana lahan 3D</a>
+      </figure>
+      <section class="home-copy panel" aria-labelledby="plot-title">
+        <h2 id="plot-title" tabindex="-1">Siapkan simulasi</h2>
+        <form id="start-simulation" class="start-simulation">
+          <fieldset class="land-options">
+            <legend>Jenis lahan</legend>
+            <label class="land-option">
+              <input type="radio" name="land-type" value="greenhouse" checked>
+              <span class="land-card"><span class="land-icon" data-land-icon="greenhouse" aria-hidden="true"></span><span><strong>Greenhouse</strong><small>Budidaya terlindung</small></span></span>
+            </label>
+            <label class="land-option">
+              <input type="radio" name="land-type" value="rice">
+              <span class="land-card"><span class="land-icon" data-land-icon="rice" aria-hidden="true"></span><span><strong>Lahan terbuka</strong><small>Budidaya di luar ruang</small></span></span>
+            </label>
+          </fieldset>
+          <label for="simulation-crop">Tanaman</label>
+          <select id="simulation-crop" name="crop" class="crop-select">
+            <option value="">Melon</option>
+          </select>
+          <details class="simulation-options">
+            <summary>Beri nama simulasi</summary>
+            <input id="project-name" name="project" aria-label="Nama simulasi" type="text" maxlength="60" placeholder="Kebun Melon">
+          </details>
+          <button class="primary-button start-button" type="submit"><span data-workspace-icon="box" aria-hidden="true"></span>Mulai simulasi 3D</button>
+          <a id="scan-selected-land" class="secondary-button" href="./scan.html?type=greenhouse"><span data-workspace-icon="scan-line" aria-hidden="true"></span>Scan lahan</a>
+        </form>
+      </section>
+    </div>
+</dialog>
 </div>
 <dialog id="device-details" class="device-dialog panel" aria-labelledby="device-details-title">
   <form method="dialog"><button class="secondary-button" type="submit" autofocus>Tutup</button></form>
