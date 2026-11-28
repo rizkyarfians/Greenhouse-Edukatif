@@ -66,6 +66,34 @@
       <p id="save-message" role="status"></p>
     </div>
   </div>
+  <section class="panel device-workspace" aria-labelledby="device-workspace-title" id="device-workspace" hidden>
+    <div class="device-workspace-head">
+      <h2 id="device-workspace-title">Perangkat lahan</h2>
+      <button class="secondary-button" id="edit-layout-devices" type="button" aria-expanded="false" aria-controls="device-editor">Atur perangkat</button>
+    </div>
+    <div id="device-editor" class="device-editor" hidden>
+      <aside class="device-toolbox" aria-label="Toolbox perangkat">
+        <h3>Toolbox</h3>
+        <div id="device-toolbox"></div>
+        <button class="secondary-button" id="device-preset" type="button">Pakai preset drip</button>
+      </aside>
+      <div class="device-placement">
+        <p id="device-edit-hint">Pilih perangkat, lalu klik posisinya di denah.</p>
+        <div id="device-plan" class="device-plan"></div>
+        <div id="device-position" hidden>
+          <label>Posisi kiri–kanan <input type="range" id="device-x" min="0" max="100" step="1"></label>
+          <label>Posisi atas–bawah <input type="range" id="device-y" min="0" max="100" step="1"></label>
+          <button type="button" class="secondary-button" id="remove-layout-device">Lepas perangkat</button>
+        </div>
+        <div class="device-edit-actions">
+          <button type="button" class="primary-button" id="apply-layout-devices">Terapkan</button>
+          <button type="button" class="secondary-button" id="cancel-layout-devices">Batal</button>
+        </div>
+      </div>
+    </div>
+    <div id="device-monitoring" class="device-monitoring"></div>
+    <p id="device-layout-status" role="status"></p>
+  </section>
   <section class="stage panel crop-stage" id="crop-dashboard" aria-labelledby="crop-view-title" hidden>
     <div class="section-head">
       <div>

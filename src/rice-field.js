@@ -1,3 +1,4 @@
+import {createDeviceSurface} from './device-surface.js';
 import {captureLayoutPreview} from './layout-preview.js';
 import {
   ACESFilmicToneMapping, Box3, DirectionalLight, HemisphereLight, OrthographicCamera,
@@ -89,6 +90,20 @@ export function openSimulation(saved) {
   stopIrrigation();
   if (viewer) viewer.reset();
   else viewerLoading ??= initializeViewer();
+  return viewerLoading;
+}
+
+export function deviceSurface() { return viewer?.deviceSurface; }
+
+export function deviceControls(kind) {
+  return kind === 'pump' ? [fill] : kind === 'valve' ? [fill, drain] : [];
+}
+
+export function deviceReading(kind) {
+  return {
+    pump: gateDevice.reading(), valve: gateDevice.reading(),
+    soil: soilDevice.reading(), water: waterDevice.reading(),
+  }[kind];
 }
 
 async function initializeViewer() {
@@ -172,6 +187,7 @@ async function makeViewer() {
     {device:waterDevice, icon:waterIcon, position:new Vector3(1.6,.55,-2.2)},
     {device:gateDevice, icon:gateIcon, position:riceModel?.gatePosition ?? new Vector3(6.23,.95,6.12)},
   ]);
+  const deviceSurface = createDeviceSurface(viewport, camera, new Box3().setFromObject(model), draw);
   controls.enablePan = false;
   controls.minZoom = 1;
   controls.maxZoom = 3.5;
@@ -184,7 +200,8 @@ async function makeViewer() {
       frame = undefined;
       if (viewport.clientWidth) {
         renderer.render(scene,camera);
-        positionDeviceMarkers(camera);
+        positionDeviceMarkers(camera, deviceSurface.hasDevices);
+        deviceSurface.position();
       }
     });
   }
@@ -220,6 +237,7 @@ async function makeViewer() {
   get('rice-scene-status').querySelector('span').textContent = riceModel ? 'Petak sawah' : 'Petak sawah · tampilan sederhana';
   return {
     capturePreview: () => captureLayoutPreview(canvas, () => renderer.render(scene, camera)),
+    deviceSurface,
     reset,
     showIrrigation(depth,active) {
       setIrrigation(depth,active);

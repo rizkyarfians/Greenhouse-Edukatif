@@ -1,3 +1,4 @@
+import {createDeviceSurface} from './device-surface.js';
 import {captureLayoutPreview} from './layout-preview.js';
 import {addDeviceMarkers, refreshDeviceDetails, showDeviceDetails} from './device-details.js';
 import * as THREE from 'three';
@@ -46,7 +47,7 @@ let watering = false;
 let tickTimer;
 let stopTimer;
 let viewer;
-let viewerRequested = false;
+let viewerRequested;
 let roofVisible = false;
 let wateringStarted = 0;
 let progressTimer;
@@ -188,9 +189,24 @@ export function openSimulation(state) {
   viewer?.resetForSession(zone);
 
   if (!viewerRequested) {
-    viewerRequested = true;
-    initializeViewer();
+    viewerRequested = initializeViewer();
   }
+  return viewerRequested;
+}
+
+export function deviceSurface() { return viewer?.deviceSurface; }
+
+export function deviceControls(kind) {
+  return kind === 'pump' || kind === 'valve' ? [get('water')] : [];
+}
+
+export function deviceReading(kind) {
+  return {
+    pump: get('pump-state').textContent, valve: get('pump-state').textContent,
+    air: readings.temperature + ' °C · ' + readings.humidity + ' % RH',
+    soil: zoneMedia[zone] + ' % · Zona ' + zone,
+    water: readings.water + ' %', tank: readings.water + ' %',
+  }[kind];
 }
 
 export function capturePreview() {
@@ -231,7 +247,8 @@ async function makeViewer() {
       frame = null;
       renderer.render(scene,camera);
       positionZoneLabels();
-      positionDeviceMarkers(camera, Boolean(cameraFrame));
+      positionDeviceMarkers(camera, Boolean(cameraFrame) || deviceSurface.hasDevices);
+      deviceSurface.position();
     });
   }
   const camera = new THREE.OrthographicCamera(-10,10,10,-10,.1,200);
@@ -395,6 +412,7 @@ async function makeViewer() {
     return [{position, icon:icons[icon], device}];
   });
   const positionDeviceMarkers = addDeviceMarkers(holder,markers);
+  const deviceSurface = createDeviceSurface(holder, camera, new THREE.Box3().setFromObject(model), invalidate);
   const animateWater = irrigationAnimation(holder,camera);
   animateWater(null);
   const pointer = new THREE.Vector2();
@@ -575,6 +593,7 @@ async function makeViewer() {
 
   return {
     capturePreview: () => captureLayoutPreview(canvas, () => renderer.render(scene, camera)),
+    deviceSurface,
     goHome,
     setZone(selected) {
       highlightZone(selected);

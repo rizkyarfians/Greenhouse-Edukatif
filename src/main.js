@@ -1,6 +1,7 @@
 import './style.css';
 import './workspace-theme.css';
 import './dashboard-workspace.css';
+import './device-layout.css';
 import './theme.js';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
 import {detailedCrops} from './detailed-crops.js';
@@ -53,6 +54,7 @@ const dateFormat = new Intl.DateTimeFormat('id-ID', {
 });
 let activeProject;
 let simulation;
+let deviceLayout;
 let lastSavedState;
 let listRequest = 0;
 const storeReady = dashboardAccount.then(account => {
@@ -184,6 +186,7 @@ async function openProject(project) {
   saveButton.disabled = true;
   saveMessage.textContent = '';
   simulation = undefined;
+  deviceLayout = undefined;
   const landType = landTypes[project.type];
   get('simulation-title').textContent = project.name;
   get('greenhouse-dashboard').hidden = Boolean(project.cropId) || project.type !== 'greenhouse';
@@ -215,9 +218,12 @@ async function openProject(project) {
       const module = await landType.load();
       if (activeProject !== project) return;
       simulation = module;
-      simulation.openSimulation(project.state);
+      await simulation.openSimulation(project.state);
     }
-    lastSavedState = JSON.stringify(simulation.snapshotSimulation());
+    const {openDeviceLayout} = await import('./device-layout.js');
+    if (activeProject !== project) return;
+    deviceLayout = openDeviceLayout(project, simulation);
+    lastSavedState = JSON.stringify(layoutSnapshot());
     saveButton.disabled = false;
   } catch (error) {
     if (activeProject !== project) return;
@@ -270,9 +276,13 @@ get('start-simulation').addEventListener('submit', event => {
   openProject({id, name, type, cropId});
 });
 
+function layoutSnapshot() {
+  return {state: simulation.snapshotSimulation(), devices: deviceLayout?.snapshot()};
+}
+
 saveButton.addEventListener('click', async () => {
-  const state = simulation.snapshotSimulation();
-  const project = {...activeProject, state, updatedAt: Date.now()};
+  const snapshot = layoutSnapshot();
+  const project = {...activeProject, ...snapshot, updatedAt: Date.now()};
   const preview = simulation.capturePreview();
   if (validLayoutPreview(preview)) project.preview = preview;
   saveButton.disabled = true;
@@ -289,7 +299,7 @@ saveButton.addEventListener('click', async () => {
       await store.save(project);
     }
     activeProject = project;
-    lastSavedState = JSON.stringify(state);
+    lastSavedState = JSON.stringify(snapshot);
     saveMessage.textContent = store === browserSimulationStore ? 'Tersimpan di browser ini.' : 'Tersimpan ke akun Google.';
   } catch (error) {
     saveMessage.textContent = storageError(error, 'menyimpan layout');
@@ -300,8 +310,9 @@ saveButton.addEventListener('click', async () => {
 });
 
 backButton.addEventListener('click', () => {
-  if (!saveButton.disabled && JSON.stringify(simulation.snapshotSimulation()) !== lastSavedState &&
+  if (!saveButton.disabled && JSON.stringify(layoutSnapshot()) !== lastSavedState &&
       !window.confirm('Ada perubahan yang belum disimpan. Kembali ke beranda?')) return;
+  deviceLayout?.close();
   simulation?.pauseSimulation();
   activeProject = undefined;
   simulationView.hidden = true;

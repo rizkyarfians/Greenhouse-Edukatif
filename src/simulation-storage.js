@@ -1,3 +1,4 @@
+import {validateDevices} from './device-layout-state.js';
 import {detailedCrops} from './detailed-crops.js';
 
 export const storagePrefix = 'greenhouse-edukatif:guest:v1:';
@@ -16,6 +17,8 @@ export function readProject(id, data) {
       !Number.isFinite(new Date(updatedAt).getTime())) return null;
   if (!['greenhouse', 'rice'].includes(type) || !state || typeof state !== 'object' || Array.isArray(state)) return null;
   const result = {id, name, type, updatedAt};
+  const devices = validateDevices(data.devices);
+  if (devices !== undefined) result.devices = devices;
   if (validLayoutPreview(data.preview)) result.preview = data.preview;
   if (cropId !== undefined) {
     if (typeof cropId !== 'string' || !Object.hasOwn(detailedCrops, cropId)) return null;

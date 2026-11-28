@@ -1,3 +1,4 @@
+import {refreshDeviceDetails} from './device-details.js';
 import {allCrops} from './crop-database.js';
 import {detailedCrops} from './detailed-crops.js';
 import {measure} from './land-geometry.js';
@@ -30,7 +31,7 @@ function sampleGarden(crop, note) {
 export function openCropGarden({crop, measurement, label}, {greenhouse}) {
   const viewport = document.getElementById('crop-viewport');
   const reset = document.getElementById('reset-crop-view');
-  const viewer = openBedViewer(viewport, measurement, [crop], {greenhouse});
+  const viewer = openBedViewer(viewport, measurement, [crop], {greenhouse, deviceLayout: true});
   const name = detailedCrops[crop.id].name;
   const canvas = viewport.querySelector('canvas');
   canvas.dataset.crop = crop.id;
@@ -60,19 +61,28 @@ export function openCropGarden({crop, measurement, label}, {greenhouse}) {
     viewer.setDrip(running);
     drip.textContent = running ? 'Hentikan drip' : 'Jalankan drip';
     status.textContent = running ? 'Simulasi aliran aktif.' : 'Simulasi aliran mati.';
+    refreshDeviceDetails();
   }
 
   if (greenhouse) {
     roof.textContent = 'Sembunyikan atap';
-    drip.textContent = 'Jalankan drip';
-    status.textContent = viewer.beds ? 'Simulasi aliran mati.' : 'Butuh bedengan untuk menjalankan irigasi.';
     roof.disabled = false;
-    drip.disabled = !viewer.beds;
     roof.addEventListener('click', toggleRoof);
-    drip.addEventListener('click', toggleDrip);
   }
+  drip.textContent = 'Jalankan drip';
+  status.textContent = viewer.beds ? 'Simulasi aliran mati.' : 'Butuh bedengan untuk menjalankan irigasi.';
+  drip.disabled = !viewer.beds;
+  drip.addEventListener('click', toggleDrip);
 
   return {
+    deviceSurface: () => viewer.deviceSurface,
+    deviceControls: kind => kind === 'pump' || kind === 'valve' ? [drip] : [],
+    deviceReading: kind => kind === 'pump' || kind === 'valve' ? status.textContent : undefined,
+    deviceLayoutApplied(devices) {
+      const active = devices.some(device => device.kind === 'pump' || device.kind === 'valve');
+      if (!greenhouse && !active && running) toggleDrip();
+      viewer.setDripVisible(active);
+    },
     capturePreview: viewer.capturePreview,
     snapshotSimulation: () => ({}),
     pauseSimulation() {

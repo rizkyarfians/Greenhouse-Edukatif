@@ -21,7 +21,7 @@ export function refreshDeviceDetails() {
 export function showDeviceDetails(device) {
   selected = device;
   title.textContent = device.title;
-  category.textContent = device.type === 'actuator' ? 'Aktuator simulasi' : 'Sensor simulasi';
+  category.textContent = {actuator: 'Aktuator simulasi', sensor: 'Sensor simulasi', equipment: 'Perangkat simulasi'}[device.type];
   description.textContent = device.description;
   actionButtons = (device.controls ?? []).map(control => {
     const button = document.createElement('button');
@@ -53,7 +53,7 @@ export function addDeviceMarkers(viewport, devices) {
     return {marker,position};
   });
 
-  return function positionMarkers(camera, hide = false) {
+  function positionMarkers(camera, hide = false) {
     const width = viewport.clientWidth;
     const height = viewport.clientHeight;
     const occupied = [];
@@ -76,4 +76,6 @@ export function addDeviceMarkers(viewport, devices) {
       marker.style.top = y + 'px';
     }
   };
+  positionMarkers.dispose = () => markers.forEach(({marker}) => marker.remove());
+  return positionMarkers;
 }
