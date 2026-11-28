@@ -428,7 +428,7 @@ async function makeViewer() {
   canvasElement.addEventListener('pointerup', event => {
     const start = pointerStart;
     pointerStart = null;
-    if (cameraFrame || switchTimer || !event.isPrimary || !start || Math.hypot(event.clientX-start[0],event.clientY-start[1]) > 5 || watering || roof.visible) return;
+    if (deviceSurface.editing || cameraFrame || switchTimer || !event.isPrimary || !start || Math.hypot(event.clientX-start[0],event.clientY-start[1]) > 5 || watering || roof.visible) return;
     const rect = canvasElement.getBoundingClientRect();
     pointer.set((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2);
     camera.updateMatrixWorld();

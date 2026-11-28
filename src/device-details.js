@@ -35,22 +35,24 @@ export function showDeviceDetails(device) {
   refreshDeviceDetails();
 }
 
-export function addDeviceMarkers(viewport, devices) {
+export function addDeviceMarkers(viewport, devices, {focusSelected = false} = {}) {
   const point = new Vector3();
-  const markers = devices.map(({position,icon,device}) => {
+  const markers = devices.map(({position,icon,device,selected,onSelect,onKeyDown}) => {
     const marker = document.createElement('button');
     marker.type = 'button';
     marker.className = 'device-marker';
     marker.dataset.deviceType = device.type;
     marker.title = device.title;
     marker.setAttribute('aria-label', device.title + ' di model 3D');
-    marker.setAttribute('aria-haspopup','dialog');
+    if (onSelect) marker.setAttribute('aria-pressed', String(selected));
+    else marker.setAttribute('aria-haspopup','dialog');
     marker.innerHTML = icon;
     marker.querySelector('svg')?.setAttribute('aria-hidden','true');
-    marker.addEventListener('click', () => showDeviceDetails(device));
+    marker.addEventListener('click', onSelect ?? (() => showDeviceDetails(device)));
+    if (onKeyDown) marker.addEventListener('keydown', onKeyDown);
     marker.hidden = true;
     viewport.append(marker);
-    return {marker,position};
+    return {marker,position,selected};
   });
 
   function positionMarkers(camera, hide = false) {
@@ -58,7 +60,7 @@ export function addDeviceMarkers(viewport, devices) {
     const height = viewport.clientHeight;
     const occupied = [];
     camera.updateMatrixWorld();
-    for (const {marker,position} of markers) {
+    for (const {marker,position,selected} of markers) {
       point.copy(position).project(camera);
       const x = (1 + point.x) * width / 2;
       let y = (1 - point.y) * height / 2;
@@ -74,6 +76,10 @@ export function addDeviceMarkers(viewport, devices) {
       occupied.push([x,y]);
       marker.style.left = x + 'px';
       marker.style.top = y + 'px';
+      if (focusSelected && selected) {
+        marker.focus({preventScroll: true});
+        focusSelected = false;
+      }
     }
   };
   positionMarkers.dispose = () => markers.forEach(({marker}) => marker.remove());

@@ -66,34 +66,19 @@
       <p id="save-message" role="status"></p>
     </div>
   </div>
-  <section class="panel device-workspace" aria-labelledby="device-workspace-title" id="device-workspace" hidden>
-    <div class="device-workspace-head">
-      <h2 id="device-workspace-title">Perangkat lahan</h2>
-      <button class="secondary-button" id="edit-layout-devices" type="button" aria-expanded="false" aria-controls="device-editor">Atur perangkat</button>
+  <aside class="device-toolbox" id="device-editor" aria-label="Perangkat lahan" hidden>
+    <button class="device-tool" id="edit-layout-devices" type="button" aria-pressed="false"></button>
+    <div id="device-toolbox"></div>
+    <button class="device-tool" id="device-preset" type="button"></button>
+    <button class="device-tool" id="remove-layout-device" type="button" hidden></button>
+  </aside>
+  <div class="device-feedback" id="device-feedback" hidden>
+    <div class="device-edit-help" id="device-edit-help" hidden>
+      <p id="device-edit-hint" role="status"></p>
+      <button class="secondary-button" id="place-device-default" type="button" hidden>Pasang di posisi awal</button>
     </div>
-    <div id="device-editor" class="device-editor" hidden>
-      <aside class="device-toolbox" aria-label="Toolbox perangkat">
-        <h3>Toolbox</h3>
-        <div id="device-toolbox"></div>
-        <button class="secondary-button" id="device-preset" type="button">Pakai preset drip</button>
-      </aside>
-      <div class="device-placement">
-        <p id="device-edit-hint">Pilih perangkat, lalu klik posisinya di denah.</p>
-        <div id="device-plan" class="device-plan"></div>
-        <div id="device-position" hidden>
-          <label>Posisi kiri–kanan <input type="range" id="device-x" min="0" max="100" step="1"></label>
-          <label>Posisi atas–bawah <input type="range" id="device-y" min="0" max="100" step="1"></label>
-          <button type="button" class="secondary-button" id="remove-layout-device">Lepas perangkat</button>
-        </div>
-        <div class="device-edit-actions">
-          <button type="button" class="primary-button" id="apply-layout-devices">Terapkan</button>
-          <button type="button" class="secondary-button" id="cancel-layout-devices">Batal</button>
-        </div>
-      </div>
-    </div>
-    <div id="device-monitoring" class="device-monitoring"></div>
-    <p id="device-layout-status" role="status"></p>
-  </section>
+    <div id="device-monitoring" class="device-monitoring" aria-label="Kontrol perangkat"></div>
+  </div>
   <section class="stage panel crop-stage" id="crop-dashboard" aria-labelledby="crop-view-title" hidden>
     <div class="section-head">
       <div>
@@ -102,7 +87,7 @@
       </div>
       <span id="crop-bed-count"></span>
     </div>
-    <div class="viewport model-stage" id="crop-viewport"></div>
+    <div class="device-stage"><div class="viewport model-stage" id="crop-viewport"></div></div>
     <div class="viewer-bar crop-greenhouse-controls" id="crop-greenhouse-controls" hidden>
       <div>
         <strong>Irigasi tetes</strong>
@@ -124,29 +109,31 @@
   <div class="dashboard" id="greenhouse-dashboard" hidden>
     <section class="stage panel" aria-labelledby="view-title">
       <div class="section-head"><h2 id="view-title">Greenhouse 3D</h2></div>
-      <div class="viewport" id="viewport">
-        <img class="fallback" src="./greenhouse-preview.png" alt="Tampilan potong greenhouse melon dengan delapan baris tanaman">
-        <div class="scene-badge" id="scene-badge"><i></i><span>Memuat model 3D…</span></div>
-        <span id="selected-zone" class="selected-zone" aria-live="polite">Zona A dipilih</span>
-        <section class="zone-card" id="zone-card" hidden aria-labelledby="zone-card-title">
-          <div class="zone-card-head">
-            <div><h3 id="zone-card-title">Zona A</h3><p>4 baris · 160 tanaman</p></div>
-            <button id="close-focus" aria-label="Kembali ke tampilan seluruh greenhouse" title="Lihat seluruh greenhouse">×</button>
-          </div>
-          <dl class="zone-stats">
-            <div><dt>Suhu udara</dt><dd id="focus-temperature"></dd></div>
-            <div><dt>Kelembapan udara</dt><dd id="focus-humidity"></dd></div>
-            <div><dt>Kelembapan media</dt><dd id="focus-media"></dd></div>
-            <div><dt>Tandon air</dt><dd id="focus-water"></dd></div>
-            <div><dt>Tandon nutrisi</dt><dd id="focus-nutrient"></dd></div>
-          </dl>
-          <div class="zone-simulation">
-            <div class="zone-status"><strong id="focus-stage" role="status">Siap disiram</strong><span id="focus-pump">Pompa mati</span></div>
-            <p id="focus-explanation">Pilih Coba siram untuk melihat air menetes ke akar.</p>
-            <progress id="focus-progress" max="100" value="0" aria-label="Progres siklus penyiraman" hidden></progress>
-          </div>
-        </section>
-        <button id="reset" class="icon-button" aria-label="Kembalikan sudut pandang" title="Kembalikan sudut pandang" disabled><span data-icon="reset"></span></button>
+      <div class="device-stage">
+        <div class="viewport" id="viewport">
+          <img class="fallback" src="./greenhouse-preview.png" alt="Tampilan potong greenhouse melon dengan delapan baris tanaman">
+          <div class="scene-badge" id="scene-badge"><i></i><span>Memuat model 3D…</span></div>
+          <span id="selected-zone" class="selected-zone" aria-live="polite">Zona A dipilih</span>
+          <section class="zone-card" id="zone-card" hidden aria-labelledby="zone-card-title">
+            <div class="zone-card-head">
+              <div><h3 id="zone-card-title">Zona A</h3><p>4 baris · 160 tanaman</p></div>
+              <button id="close-focus" aria-label="Kembali ke tampilan seluruh greenhouse" title="Lihat seluruh greenhouse">×</button>
+            </div>
+            <dl class="zone-stats">
+              <div><dt>Suhu udara</dt><dd id="focus-temperature"></dd></div>
+              <div><dt>Kelembapan udara</dt><dd id="focus-humidity"></dd></div>
+              <div><dt>Kelembapan media</dt><dd id="focus-media"></dd></div>
+              <div><dt>Tandon air</dt><dd id="focus-water"></dd></div>
+              <div><dt>Tandon nutrisi</dt><dd id="focus-nutrient"></dd></div>
+            </dl>
+            <div class="zone-simulation">
+              <div class="zone-status"><strong id="focus-stage" role="status">Siap disiram</strong><span id="focus-pump">Pompa mati</span></div>
+              <p id="focus-explanation">Pilih Coba siram untuk melihat air menetes ke akar.</p>
+              <progress id="focus-progress" max="100" value="0" aria-label="Progres siklus penyiraman" hidden></progress>
+            </div>
+          </section>
+          <button id="reset" class="icon-button" aria-label="Kembalikan sudut pandang" title="Kembalikan sudut pandang" disabled><span data-icon="reset"></span></button>
+        </div>
       </div>
       <div class="viewer-bar">
         <span id="viewer-help"><span data-icon="move"></span> Pilih zona · Geser untuk memutar</span>
@@ -169,9 +156,11 @@
   <div class="dashboard" id="rice-dashboard" hidden>
     <section class="stage panel" aria-labelledby="rice-view-title">
       <div class="section-head"><h2 id="rice-view-title">Sawah padi 3D</h2></div>
-      <div id="rice-viewport" class="viewport rice-viewport">
-        <div id="rice-scene-status" class="scene-badge" role="status"><i></i><span>Memuat model 3D…</span></div>
-        <button id="rice-reset" type="button" class="icon-button rice-reset" disabled>Reset kamera</button>
+      <div class="device-stage">
+        <div id="rice-viewport" class="viewport rice-viewport">
+          <div id="rice-scene-status" class="scene-badge" role="status"><i></i><span>Memuat model 3D…</span></div>
+          <button id="rice-reset" type="button" class="icon-button rice-reset" disabled>Reset kamera</button>
+        </div>
       </div>
       <div class="viewer-bar"><span>Geser untuk memutar</span></div>
     </section>

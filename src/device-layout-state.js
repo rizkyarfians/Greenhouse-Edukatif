@@ -1,11 +1,11 @@
 export const deviceCatalog = {
-  pump: {name: 'Pompa', symbol: 'P', type: 'actuator', description: 'Menjalankan irigasi simulasi.'},
-  valve: {name: 'Katup irigasi', symbol: 'K', type: 'actuator', description: 'Membuka atau menutup aliran irigasi simulasi.'},
-  air: {name: 'Sensor suhu & kelembapan udara', symbol: 'U', type: 'sensor', description: 'Menampilkan suhu dan kelembapan udara simulasi.'},
-  soil: {name: 'Sensor kelembapan tanah', symbol: 'M', type: 'sensor', description: 'Menampilkan kelembapan media atau tanah simulasi.'},
-  water: {name: 'Sensor air', symbol: 'A', type: 'sensor', description: 'Menampilkan level tandon atau tinggi genangan untuk sawah.'},
-  tank: {name: 'Tandon air', symbol: 'T', type: 'equipment', description: 'Menampilkan cadangan air untuk irigasi.'},
-  panel: {name: 'Panel box', symbol: 'B', type: 'equipment', description: 'Titik penempatan panel kontrol dan pengkabelan pada denah.'},
+  pump: {name: 'Pompa', type: 'actuator', description: 'Menjalankan irigasi simulasi.'},
+  valve: {name: 'Katup irigasi', type: 'actuator', description: 'Membuka atau menutup aliran irigasi simulasi.'},
+  air: {name: 'Sensor suhu & kelembapan udara', type: 'sensor', description: 'Menampilkan suhu dan kelembapan udara simulasi.'},
+  soil: {name: 'Sensor kelembapan tanah', type: 'sensor', description: 'Menampilkan kelembapan media atau tanah simulasi.'},
+  water: {name: 'Sensor air', type: 'sensor', description: 'Menampilkan level tandon atau tinggi genangan untuk sawah.'},
+  tank: {name: 'Tandon air', type: 'equipment', description: 'Menampilkan cadangan air untuk irigasi.'},
+  panel: {name: 'Panel box', type: 'equipment', description: 'Titik penempatan panel kontrol dan pengkabelan lahan.'},
 };
 
 export const deviceLimit = 24;

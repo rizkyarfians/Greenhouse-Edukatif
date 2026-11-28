@@ -1,45 +1,54 @@
-.device-workspace { padding: clamp(14px, 2vw, 22px); margin-bottom: 16px; }
-.device-workspace-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.device-editor { display: grid; grid-template-columns: minmax(180px, 235px) minmax(0, 1fr); gap: 18px; margin-top: 16px; }
-.device-toolbox { padding: 12px; border: 1px solid var(--app-border); border-radius: 14px; background: var(--app-bg); }
-.device-toolbox h3 { margin-bottom: 8px; }
-#device-toolbox { display: grid; gap: 5px; margin-bottom: 10px; }
-#device-toolbox button, .device-monitoring button { white-space: normal; }
-#device-toolbox button { text-align: left; border-radius: 10px; }
-#device-toolbox button[aria-pressed="true"] { background: var(--app-lime); color: #19271b; }
-#device-edit-hint { margin-bottom: 8px; color: var(--app-muted); }
-.device-add-at-center { margin-top: 4px; }
-.device-plan {
-  width: min(100%, 620px);
-  max-height: 440px;
-  position: relative;
-  border: 1px solid var(--app-border);
-  border-radius: 12px;
-  background: radial-gradient(var(--app-border) 1px, transparent 1px) 0 0 / 16px 16px, var(--app-bg);
+.device-stage {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
 }
-.device-plan.placing { cursor: crosshair; }
-.device-plan > svg { position:absolute; inset:0; width:100%; height:100%; padding: 1px; }
-.device-plan polygon { fill: var(--app-sage); stroke: var(--app-dark); stroke-width: .55; }
-.device-plan line { stroke: var(--app-border); stroke-width: 1.2; }
-.device-plan-marker {
-  position: absolute;
-  transform: translate(-50%, -50%);
+.device-stage > .viewport { grid-column: 2; min-width: 0; }
+.device-toolbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 6px;
+  background: var(--app-bg);
+  border: 1px solid var(--app-border);
+  border-inline-start: 0;
+  border-inline-end: 0;
+}
+#device-toolbox {
+  display: grid;
+  gap: 4px;
+  padding-block: 7px;
+  border-block: 1px solid var(--app-border);
+}
+.device-tool {
+  display: grid;
+  place-items: center;
   width: 36px;
   height: 36px;
-  border: 2px solid var(--app-surface);
-  border-radius: 50%;
-  background: var(--app-dark);
-  color: var(--theme-on-accent, white);
-  font-weight: 800;
+  padding: 0;
+  border: 1px solid var(--app-border);
+  border-radius: 9px;
+  background: var(--app-surface);
+  color: var(--app-dark);
 }
-.device-plan-marker[aria-pressed="true"] { background: #83d4eb; color: #19271b; outline: 2px solid currentColor; z-index: 1; }
-#device-position { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-top:10px; }
-#device-position label { display:grid; gap:2px; color:var(--app-muted); font-size:13px; }
-.device-edit-actions, .device-monitoring:not(:empty) { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-#device-layout-status:not(:empty) { color:var(--app-muted); margin-top:10px; font-size:14px; }
-.device-marker span { font-weight: 800; }
-@media (max-width:600px) {
-  .device-editor { grid-template-columns:minmax(0, 1fr); }
-  #device-toolbox { grid-template-columns:repeat(2, minmax(0, 1fr)); }
-  #device-toolbox button { padding-inline: 9px; }
+.device-tool svg { width: 18px; height: 18px; }
+.device-tool:hover { background: var(--app-sage); }
+.device-tool[aria-pressed="true"] { background: var(--app-lime); color: #19271b; }
+.viewport.device-placing canvas { cursor: crosshair; }
+.device-editing .zone-label, .device-editing .zone-card, .device-editing .selected-zone { display: none; }
+.device-marker[aria-pressed="true"] { z-index: 2; background: #183b35; outline: 2px solid #b4eca6; }
+.device-feedback { border-bottom: 1px solid var(--app-border); }
+.device-feedback:has(#device-edit-help[hidden]):has(.device-monitoring:empty) { display: none; }
+.device-edit-help, .device-monitoring:not(:empty) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 8px 14px;
+  color: var(--app-muted);
+  font-size: 13px;
+}
+.device-feedback button { min-height: 32px; white-space: normal; padding-block: 4px; }
+@media (max-width: 680px) {
+  .device-stage:has(.device-toolbox) > .viewport { min-height: 432px; }
 }

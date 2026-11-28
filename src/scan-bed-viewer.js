@@ -167,8 +167,7 @@ export function openBedViewer(viewport, measurement, crops, {greenhouse = false,
   controls.maxPolarAngle = Math.PI * .48;
   const landBounds = new THREE.Box3().setFromObject(ground);
   const deviceSurface = deviceLayout ? createDeviceSurface(viewport, camera, landBounds, render,
-    layout.polygon.map(([x,y]) => [x * scale, -y * scale]),
-    layout.beds.map(({x, from, to}) => ({x: x*scale, from: -from*scale, to: -to*scale}))) : undefined;
+    layout.polygon.map(([x,y]) => [x * scale, -y * scale])) : undefined;
   function render() {
     renderer.render(scene, camera);
     deviceSurface?.position();
