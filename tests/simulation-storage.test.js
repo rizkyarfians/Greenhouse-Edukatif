@@ -58,3 +58,13 @@ test('guest records survive reopening and malformed or foreign records are skipp
   assert.deepEqual(browserSimulationStore.list(storage), [{...greenhouse, type: 'greenhouse'}]);
   assert.equal(records.get('automotion.land.v1'), '{}');
 });
+
+test('retains bounded raster previews and discards unsupported image URLs', () => {
+  const preview = 'data:image/webp;base64,UklGRg==';
+  assert.equal(readProject(id, {...greenhouse, preview}).preview, preview);
+  for (const preview of [
+    'https://example.com/track.png',
+    'data:image/svg+xml;base64,PHN2Zz4=',
+    'data:image/webp;base64,' + 'A'.repeat(36_000),
+  ]) assert.equal(readProject(id, {...greenhouse, preview}).preview, undefined);
+});

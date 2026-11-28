@@ -1,3 +1,4 @@
+import {captureLayoutPreview} from './layout-preview.js';
 import {addDeviceMarkers, refreshDeviceDetails, showDeviceDetails} from './device-details.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -190,6 +191,10 @@ export function openSimulation(state) {
     viewerRequested = true;
     initializeViewer();
   }
+}
+
+export function capturePreview() {
+  return viewer?.capturePreview();
 }
 
 export function snapshotSimulation() {
@@ -569,6 +574,7 @@ async function makeViewer() {
 
 
   return {
+    capturePreview: () => captureLayoutPreview(canvas, () => renderer.render(scene, camera)),
     goHome,
     setZone(selected) {
       highlightZone(selected);

@@ -4,6 +4,11 @@ export const storagePrefix = 'greenhouse-edukatif:guest:v1:';
 const validId = /^[a-f0-9]{32}$/;
 const percentage = value => Number.isFinite(value) && value >= 0 && value <= 100;
 
+export function validLayoutPreview(value) {
+  return typeof value === 'string' && value.length <= 36_000 &&
+    /^data:image\/(webp|jpeg);base64,[a-zA-Z0-9+/]+={0,2}$/.test(value);
+}
+
 export function readProject(id, data) {
   if (typeof id !== 'string' || !validId.test(id) || !data || typeof data !== 'object') return null;
   const {name, type = 'greenhouse', cropId, state, updatedAt} = data;
@@ -11,6 +16,7 @@ export function readProject(id, data) {
       !Number.isFinite(new Date(updatedAt).getTime())) return null;
   if (!['greenhouse', 'rice'].includes(type) || !state || typeof state !== 'object' || Array.isArray(state)) return null;
   const result = {id, name, type, updatedAt};
+  if (validLayoutPreview(data.preview)) result.preview = data.preview;
   if (cropId !== undefined) {
     if (typeof cropId !== 'string' || !Object.hasOwn(detailedCrops, cropId)) return null;
     return {...result, cropId, state: {}};

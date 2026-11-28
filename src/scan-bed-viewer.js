@@ -1,3 +1,4 @@
+import {captureLayoutPreview} from './layout-preview.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {canvasRenderer} from './canvas-renderer.js';
@@ -212,6 +213,7 @@ export function openBedViewer(viewport, measurement, crops, {greenhouse = false}
 
   controls.addEventListener('change', render);
   return {
+    capturePreview: () => captureLayoutPreview(renderer.domElement, render),
     beds: layout.beds.length,
     reset,
     setRoof(visible) {

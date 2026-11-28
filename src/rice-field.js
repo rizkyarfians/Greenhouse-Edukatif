@@ -1,3 +1,4 @@
+import {captureLayoutPreview} from './layout-preview.js';
 import {
   ACESFilmicToneMapping, Box3, DirectionalLight, HemisphereLight, OrthographicCamera,
   Scene, Vector3, WebGLRenderer,
@@ -101,6 +102,10 @@ async function initializeViewer() {
   } finally {
     viewerLoading = undefined;
   }
+}
+
+export function capturePreview() {
+  return viewer?.capturePreview();
 }
 
 export function snapshotSimulation() {
@@ -214,6 +219,7 @@ async function makeViewer() {
   get('rice-reset').addEventListener('click',reset);
   get('rice-scene-status').querySelector('span').textContent = riceModel ? 'Petak sawah' : 'Petak sawah · tampilan sederhana';
   return {
+    capturePreview: () => captureLayoutPreview(canvas, () => renderer.render(scene, camera)),
     reset,
     showIrrigation(depth,active) {
       setIrrigation(depth,active);

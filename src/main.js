@@ -6,13 +6,14 @@ import sprout from 'lucide-static/icons/sprout.svg?raw';
 import {detailedCrops} from './detailed-crops.js';
 import {dashboardAccount} from './dashboard-account.js';
 import {accountSimulationStore, storageError} from './account-storage-api.js';
-import {browserSimulationStore, storagePrefix} from './simulation-storage.js';
+import {browserSimulationStore, storagePrefix, validLayoutPreview} from './simulation-storage.js';
 import dashboardIcon from 'lucide-static/icons/layout-dashboard.svg?raw';
 import scanIcon from 'lucide-static/icons/scan-line.svg?raw';
 import folderIcon from 'lucide-static/icons/folder.svg?raw';
 import boxIcon from 'lucide-static/icons/box.svg?raw';
 import mapIcon from 'lucide-static/icons/map.svg?raw';
 import chevronLeft from 'lucide-static/icons/chevron-left.svg?raw';
+import plusIcon from 'lucide-static/icons/plus.svg?raw';
 import saveIcon from 'lucide-static/icons/save.svg?raw';
 import greenhouseIcon from 'lucide-static/icons/house.svg?raw';
 
@@ -56,7 +57,7 @@ let listRequest = 0;
 const storeReady = dashboardAccount.then(account => {
   if (!account) return null;
   if (account.mode === 'guest') return browserSimulationStore;
-  get('project-storage-label').textContent = 'Simpanan akun Google · tersedia di perangkat lain';
+  get('project-storage-label').textContent = 'Tersimpan di akun Google · tersedia di perangkat lain';
   importLocal.hidden = !localProjects().length;
   return accountSimulationStore(account);
 });
@@ -101,45 +102,72 @@ async function renderSavedProjects() {
   const request = ++listRequest;
   retrySaved.hidden = true;
   savedList.replaceChildren();
-  homeMessage.textContent = 'Memuat simpanan…';
+  homeMessage.textContent = 'Memuat layout…';
   try {
     const store = await storeReady;
     if (!store || request !== listRequest) return;
     if (store === browserSimulationStore) {
-      get('project-storage-label').textContent = 'Simpanan di browser ini';
+      get('project-storage-label').textContent = 'Tersimpan di browser ini';
     }
     const projects = await store.list();
     if (request !== listRequest) return;
     showSavedProjects(projects);
   } catch (error) {
     if (request !== listRequest) return;
-    homeMessage.textContent = storageError(error, 'memuat simpanan');
+    homeMessage.textContent = storageError(error, 'memuat layout');
     retrySaved.hidden = false;
   }
 }
 
 function showSavedProjects(projects) {
-  homeMessage.textContent = projects.length ? '' : 'Belum ada simulasi tersimpan.';
+  homeMessage.textContent = '';
   for (const project of projects.sort((a, b) => b.updatedAt - a.updatedAt)) {
     const row = document.createElement('li');
-    row.className = 'saved-project panel';
-    const info = document.createElement('div');
-    const name = document.createElement('h3');
-    name.textContent = project.name;
-    const summary = document.createElement('p');
-    const plot = project.type === 'greenhouse' ? `Zona ${project.state.zone}` : `Genangan ${project.state.waterDepth} cm`;
-    const label = project.cropId
-      ? `${project.type === 'greenhouse' ? 'Greenhouse' : 'Lahan terbuka'} · ${detailedCrops[project.cropId].name}`
-      : `${landTypes[project.type].label} · ${plot}`;
-    summary.textContent = `${label} · Disimpan ${dateFormat.format(project.updatedAt)}`;
-    info.append(name, summary);
     const open = document.createElement('button');
-    open.className = 'secondary-button';
+    open.className = 'saved-project';
     open.type = 'button';
-    open.textContent = 'Buka';
     open.setAttribute('aria-label', 'Buka ' + project.name);
+
+    const cover = document.createElement('img');
+    const captured = validLayoutPreview(project.preview);
+    cover.className = 'saved-cover';
+    cover.src = captured ? project.preview :
+      project.type === 'greenhouse' ? './greenhouse-preview.png' : './lahan-terbuka-preview.webp';
+    cover.alt = '';
+    cover.loading = 'lazy';
+
+    const info = document.createElement('span');
+    info.className = 'saved-project-info';
+    const name = document.createElement('strong');
+    name.textContent = project.name;
+    const date = document.createElement('time');
+    date.dateTime = new Date(project.updatedAt).toISOString();
+    date.textContent = 'Disimpan ' + dateFormat.format(project.updatedAt);
+    info.append(name, date);
+
+    open.append(cover, info);
     open.addEventListener('click', () => openProject(project));
-    row.append(info, open);
+    row.append(open);
+    savedList.append(row);
+  }
+
+  for (let slot = 0; slot < Math.max(1, 6 - projects.length); slot++) {
+    const row = document.createElement('li');
+    const add = document.createElement('button');
+    add.className = 'new-layout';
+    add.type = 'button';
+    add.setAttribute('aria-label', 'Buat layout baru');
+    add.title = 'Buat layout baru';
+    add.innerHTML = plusIcon;
+    add.firstElementChild.setAttribute('aria-hidden', 'true');
+    add.addEventListener('click', () => {
+      history.replaceState(history.state, '', '#plot-title');
+      updateHomeNavigation();
+      const title = get('plot-title');
+      title.focus({preventScroll: true});
+      title.scrollIntoView({block: 'start'});
+    });
+    row.append(add);
     savedList.append(row);
   }
 }
@@ -236,18 +264,26 @@ get('start-simulation').addEventListener('submit', event => {
 saveButton.addEventListener('click', async () => {
   const state = simulation.snapshotSimulation();
   const project = {...activeProject, state, updatedAt: Date.now()};
+  const preview = simulation.capturePreview();
+  if (validLayoutPreview(preview)) project.preview = preview;
   saveButton.disabled = true;
   backButton.disabled = true;
   saveMessage.textContent = 'Menyimpan…';
   try {
     const store = await storeReady;
     if (!store) return;
-    await store.save(project);
+    try {
+      await store.save(project);
+    } catch (error) {
+      if (store !== browserSimulationStore || error?.name !== 'QuotaExceededError' || !project.preview) throw error;
+      delete project.preview;
+      await store.save(project);
+    }
     activeProject = project;
     lastSavedState = JSON.stringify(state);
     saveMessage.textContent = store === browserSimulationStore ? 'Tersimpan di browser ini.' : 'Tersimpan ke akun Google.';
   } catch (error) {
-    saveMessage.textContent = storageError(error, 'menyimpan simulasi');
+    saveMessage.textContent = storageError(error, 'menyimpan layout');
   } finally {
     saveButton.disabled = false;
     backButton.disabled = false;
@@ -270,7 +306,7 @@ retrySaved.addEventListener('click', renderSavedProjects);
 
 importLocal.addEventListener('click', async () => {
   const local = localProjects();
-  if (!local.length || !window.confirm('Salin ' + local.length + ' simulasi dari browser ini ke akun Google yang aktif?')) return;
+  if (!local.length || !window.confirm('Salin ' + local.length + ' layout dari browser ini ke akun Google yang aktif?')) return;
   importLocal.disabled = true;
   importStatus.textContent = 'Menyalin simpanan browser…';
   try {

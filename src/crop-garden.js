@@ -73,6 +73,7 @@ export function openCropGarden({crop, measurement, label}, {greenhouse}) {
   }
 
   return {
+    capturePreview: viewer.capturePreview,
     snapshotSimulation: () => ({}),
     pauseSimulation() {
       reset.removeEventListener('click', viewer.reset);
