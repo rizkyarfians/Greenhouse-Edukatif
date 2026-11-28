@@ -2,20 +2,16 @@ import Fastify, { LogController } from 'fastify'
 import fastifyStatic from '@fastify/static'
 import { registerGoogleLogin } from './google-login.js'
 import { firebaseTokenVerifier } from './firebase-token.js'
-import { registerCropAi } from './crop-ai.js'
 import { registerAccountStorage } from './account-storage.js'
 
-export function buildApp({ pool, logger = false, google = null, fetcher, webRoot, firebaseProjectId, firebaseFetcher, aiConfig, aiFetcher }) {
+export function buildApp({ pool, logger = false, google = null, fetcher, webRoot, firebaseProjectId, firebaseFetcher }) {
   const logController = new LogController({
     disableRequestLogging: request => request.url?.startsWith('/api/auth/') ?? false,
   })
   const app = Fastify({ logger, logController })
   const readGoogleUser = registerGoogleLogin(app, google, fetcher)
-  app.decorateRequest('ownerKey', null)
-  const accountAuth = { readGoogleUser, googleOrigin: google?.origin,
-    verifyFirebase: firebaseTokenVerifier(firebaseProjectId, firebaseFetcher) }
-  registerAccountStorage(app, { pool, ...accountAuth })
-  registerCropAi(app, { accountAuth, config: aiConfig, fetcher: aiFetcher })
+  registerAccountStorage(app, { pool, readGoogleUser, googleOrigin: google?.origin,
+    verifyFirebase: firebaseTokenVerifier(firebaseProjectId, firebaseFetcher) })
   if (webRoot) app.register(fastifyStatic, {
     root: webRoot,
     cacheControl: false,

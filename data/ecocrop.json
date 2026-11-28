@@ -1,0 +1,439 @@
+{
+  "source": {
+    "publisher": "FAO EcoCrop",
+    "catalog": "https://cgiar-climate-data-hub.github.io/catalog/ecocrop/",
+    "snapshot": "https://raw.githubusercontent.com/OpenCLIM/ecocrop/ea43ecd418fd1a1ea08d32c7dce64b7fae02dec4/EcoCrop_DB.csv",
+    "snapshotSha256": "4187e8846336e185c4583165211c5981855e95adfbefd897bd2bd481de48d106"
+  },
+  "crops": {
+    "rice": {
+      "ecoPortCode": 1574,
+      "sourceScientificName": "Oryza sativa",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=1574",
+      "temperatureC": {
+        "optimal": [
+          20,
+          30
+        ],
+        "absolute": [
+          10,
+          36
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          5.5,
+          7
+        ],
+        "absolute": [
+          4.5,
+          9
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          1500,
+          2000
+        ],
+        "absolute": [
+          1000,
+          4000
+        ]
+      },
+      "cropCycleDays": [
+        80,
+        180
+      ]
+    },
+    "maize": {
+      "ecoPortCode": 2175,
+      "sourceScientificName": "Zea mays",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=2175",
+      "temperatureC": {
+        "optimal": [
+          18,
+          33
+        ],
+        "absolute": [
+          10,
+          47
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          5,
+          7
+        ],
+        "absolute": [
+          4.5,
+          8.5
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          600,
+          1200
+        ],
+        "absolute": [
+          400,
+          1800
+        ]
+      },
+      "cropCycleDays": [
+        65,
+        365
+      ]
+    },
+    "soybean": {
+      "ecoPortCode": 1150,
+      "sourceScientificName": "Glycine max",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=1150",
+      "temperatureC": {
+        "optimal": [
+          20,
+          33
+        ],
+        "absolute": [
+          10,
+          38
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          5.5,
+          6.5
+        ],
+        "absolute": [
+          4.5,
+          8.4
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          600,
+          1500
+        ],
+        "absolute": [
+          450,
+          1800
+        ]
+      },
+      "cropCycleDays": [
+        75,
+        180
+      ]
+    },
+    "groundnut": {
+      "ecoPortCode": 2199,
+      "sourceScientificName": "Arachis hypogaea",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=2199",
+      "temperatureC": {
+        "optimal": [
+          22,
+          32
+        ],
+        "absolute": [
+          10,
+          45
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          5.5,
+          6.5
+        ],
+        "absolute": [
+          4.5,
+          8.5
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          600,
+          1500
+        ],
+        "absolute": [
+          400,
+          4000
+        ]
+      },
+      "cropCycleDays": [
+        90,
+        150
+      ]
+    },
+    "chili": {
+      "ecoPortCode": 618,
+      "sourceScientificName": "Capsicum annuum",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=618",
+      "temperatureC": {
+        "optimal": [
+          17,
+          30
+        ],
+        "absolute": [
+          8,
+          35
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          5.5,
+          6.8
+        ],
+        "absolute": [
+          4.5,
+          7
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          600,
+          1250
+        ],
+        "absolute": [
+          500,
+          1700
+        ]
+      },
+      "cropCycleDays": [
+        60,
+        180
+      ]
+    },
+    "tomato": {
+      "ecoPortCode": 1379,
+      "sourceScientificName": "Lycopersicon esculentum",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=1379",
+      "temperatureC": {
+        "optimal": [
+          20,
+          27
+        ],
+        "absolute": [
+          7,
+          35
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          5.5,
+          6.8
+        ],
+        "absolute": [
+          5,
+          7.5
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          600,
+          1300
+        ],
+        "absolute": [
+          400,
+          1800
+        ]
+      },
+      "cropCycleDays": [
+        70,
+        150
+      ]
+    },
+    "cabbage": {
+      "ecoPortCode": 554,
+      "sourceScientificName": "Brassica oleracea var. capitata",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=554",
+      "temperatureC": {
+        "optimal": [
+          15,
+          24
+        ],
+        "absolute": [
+          7,
+          32
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          6,
+          7.5
+        ],
+        "absolute": [
+          5,
+          8.3
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          500,
+          1000
+        ],
+        "absolute": [
+          300,
+          2500
+        ]
+      },
+      "cropCycleDays": [
+        60,
+        200
+      ]
+    },
+    "potato": {
+      "ecoPortCode": 1971,
+      "sourceScientificName": "Solanum tuberosum",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=1971",
+      "temperatureC": {
+        "optimal": [
+          15,
+          25
+        ],
+        "absolute": [
+          7,
+          30
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          5,
+          6.2
+        ],
+        "absolute": [
+          4.2,
+          8.5
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          500,
+          800
+        ],
+        "absolute": [
+          250,
+          2000
+        ]
+      },
+      "cropCycleDays": [
+        90,
+        160
+      ]
+    },
+    "cucumber": {
+      "ecoPortCode": 817,
+      "sourceScientificName": "Cucumis sativus",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=817",
+      "temperatureC": {
+        "optimal": [
+          18,
+          32
+        ],
+        "absolute": [
+          6,
+          38
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          6,
+          7.5
+        ],
+        "absolute": [
+          4.5,
+          8.7
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          1000,
+          1200
+        ],
+        "absolute": [
+          400,
+          4300
+        ]
+      },
+      "cropCycleDays": [
+        40,
+        180
+      ]
+    },
+    "shallot": {
+      "ecoPortCode": 1096,
+      "sourceScientificName": "Allium cepa var. aggregatum",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=1096",
+      "temperatureC": {
+        "optimal": [
+          20,
+          25
+        ],
+        "absolute": [
+          10,
+          30
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          6,
+          7
+        ],
+        "absolute": [
+          5.5,
+          7.5
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          450,
+          600
+        ],
+        "absolute": [
+          300,
+          1000
+        ]
+      },
+      "cropCycleDays": [
+        60,
+        100
+      ]
+    },
+    "melon": {
+      "ecoPortCode": 815,
+      "sourceScientificName": "Cucumis melo",
+      "datasheet": "https://ecocrop.apps.fao.org/ecocrop/srv/en/dataSheet?id=815",
+      "temperatureC": {
+        "optimal": [
+          18,
+          30
+        ],
+        "absolute": [
+          9,
+          35
+        ]
+      },
+      "soilPh": {
+        "optimal": [
+          6,
+          7.5
+        ],
+        "absolute": [
+          5,
+          8.7
+        ]
+      },
+      "annualRainfallMm": {
+        "optimal": [
+          1000,
+          1300
+        ],
+        "absolute": [
+          900,
+          2500
+        ]
+      },
+      "cropCycleDays": [
+        50,
+        120
+      ]
+    }
+  }
+}

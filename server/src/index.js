@@ -15,7 +15,6 @@ const app = buildApp({
   logger: true,
   google: googleLoginConfig(),
   firebaseProjectId: (process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID)?.trim(),
-  aiConfig: { apiKey: process.env.OPENAI_API_KEY?.trim(), model: process.env.OPENAI_MODEL?.trim() || undefined },
   webRoot: existsSync(dist) ? dist : undefined,
 })
 

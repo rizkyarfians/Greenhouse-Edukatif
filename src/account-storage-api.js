@@ -1,4 +1,4 @@
-export function accountApi(account, prefix, timeout = 12_000) {
+export function accountStorageApi(account) {
   return async (path, {method = 'GET', body} = {}) => {
     const headers = {Accept: 'application/json'};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
@@ -7,9 +7,9 @@ export function accountApi(account, prefix, timeout = 12_000) {
       if (user?.uid !== account.uid) throw Object.assign(new Error('Account changed'), {status: 401});
       headers.Authorization = 'Bearer ' + await user.getIdToken();
     }
-    const response = await fetch(prefix + path, {method, headers,
+    const response = await fetch('/api/storage/' + path, {method, headers,
       body: body === undefined ? undefined : JSON.stringify(body),
-      cache: 'no-store', signal: AbortSignal.timeout(timeout)});
+      cache: 'no-store', signal: AbortSignal.timeout(12_000)});
     if (response.status === 204) return;
     if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
       const data = await response.json().catch(() => ({}));
@@ -18,8 +18,6 @@ export function accountApi(account, prefix, timeout = 12_000) {
     return response.json();
   };
 }
-
-export const accountStorageApi = account => accountApi(account, '/api/storage/');
 
 export function accountSimulationStore(account) {
   const request = accountStorageApi(account);

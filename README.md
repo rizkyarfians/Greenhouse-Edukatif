@@ -29,6 +29,19 @@ Simpan polygon valid, kemudian **Lanjut ke analisis iklim**. Setelah persetujuan
 
 Dari halaman iklim, buka rekomendasi tanaman. Isi kondisi air, tekstur, drainase dan pH (boleh kosong). Screening v0.1 mencakup 10 komoditas lahan terbuka, faktor pembatas, skor ternormalisasi pada data tersedia, cakupan terpisah, dan alasan. Kandidat hanya ketika semua parameter terisi dan tidak ada faktor pembatas/catatan risiko; bukan jaminan kelayakan budidaya. Data iklim yang tidak cocok dengan polygon atau lebih dari 30 hari tidak digunakan; prakiraan ekstrem maksimal usia 2 hari. Klimatologi 3 bulan dipakai hanya jika bulan cocok dan minimal 8 tahun lengkap masing-masing, selain itu historis 90 hari sebagai konteks suhu. Curah hujan tidak dianggap pasokan irigasi. Profil suhu/pH/umur/jarak tanam dan bobot adalah asumsi prototype belum tervalidasi, referensi metodologi FAO ECOCROP dan Crop Water Needs. Simpan pilihan sebagai automotion.recommendation.v1 atau ekspor JSON untuk generator 3D. Tes: node --test tests/land-geometry.test.js tests/climate-core.test.js tests/recommendation-core.test.js.
 
+### Data rujukan tanaman
+
+`data/ecocrop.json` memuat 11 komoditas yang sudah dipakai Automotion. Setiap entri menyertakan kode EcoPort dan tautan datasheet FAO. Data berasal dari snapshot CSV FAO EcoCrop yang dipublikasikan ulang oleh OpenCLIM. [Katalog data dan atribusi](https://cgiar-climate-data-hub.github.io/catalog/ecocrop/) · [CSV sumber](https://github.com/OpenCLIM/ecocrop/blob/ea43ecd418fd1a1ea08d32c7dce64b7fae02dec4/EcoCrop_DB.csv).
+
+Ambil ulang snapshot dan ekstrak rentang suhu, pH, curah hujan tahunan, dan durasi siklus dengan Python 3:
+
+```cmd
+python scripts/import-ecocrop.py
+```
+
+Kalau CSV sudah diunduh, gunakan `python scripts/import-ecocrop.py --csv EcoCrop_DB.csv`. Data rujukan ini tersedia untuk ditinjau sebelum dipakai pada skor. Curah hujan EcoCrop adalah total tahunan. Data iklim Automotion tetap diambil dari Open-Meteo untuk koordinat lahan.
+
+
 ## Dynamic Farm — Cycle 4
 
 Simpan rencana tanaman dari Cycle 3 lalu buka rencana 3D. Terrain datar dibentuk dari polygon (termasuk cekung), baris tanam dipotong pada batas dan kapasitas dibatasi target area efektif. Sampel visual maksimal 3.000 instans; kapasitas grid tidak sama dengan objek visual. Persentase efektif belum membentuk bedengan/jalan. Zona berdasarkan sumbu timur–barat; luas tidak selalu sama. Sepuluh crop menggunakan model geometri prosedural ilustratif, bukan aset botani realistis. Marker sensor tanah, cuaca, katup, pompa, tandon dapat diklik; aliran air dan kelembapan hanya simulasi. Tidak ada hardware control atau rancangan hidraulik. WebGL gagal → sketsa 2D dan panel masih bisa digunakan. Layout disimpan lokal untuk polygon, komoditas dan waktu rencana yang sama. Tes: node --test tests/land-geometry.test.js tests/climate-core.test.js tests/recommendation-core.test.js tests/farm-layout.test.js.
@@ -138,9 +151,3 @@ Data hasil iklim, rekomendasi, dan layout tetap disimpan di browser. Pengaturan 
 3. Jalankan `npm --prefix server ci`, `npm run build`, lalu `npm --prefix server start`. Buka aplikasi dari origin yang sama dengan callback terdaftar. Untuk contoh localhost, alamatnya `http://localhost:3001/`. Fastify menyajikan `dist` sekaligus API login. Jika tunnel masih menuju server Python statis di port 8080, mode tamu tetap berjalan. Untuk Google, arahkan origin publik ke Fastify di port 3001.
 
 Jika konfigurasi Google belum diisi, tombol Google dinonaktifkan dan jalur tamu tersedia. Login Google hanya meminta identitas profil dan email. Akses kotak masuk Gmail dan sinkronisasi simpanan antarperangkat belum termasuk di trial.
-
-### Penjelasan AI untuk rekomendasi tanaman
-
-Simpan project API key OpenAI sebagai `OPENAI_API_KEY` di `.env` pada PC server. Model default `gpt-4.1-mini` bisa diubah melalui `OPENAI_MODEL` ke model yang mendukung Structured Outputs lewat Responses API. Restart Fastify dengan `npm --prefix server start` setelah mengubah konfigurasi.
-
-Di Automotion, masuk Google, buka **Rekomendasi Tanaman**, jalankan **Analisis tanaman**, lalu pilih **Jelaskan hasil dengan AI**. Data yang dikirim berupa luas, kondisi tanah dan air, ringkasan iklim, dan hasil screening yang dihitung server. Nama profil, koordinat patok, dan data akun tidak dikirim. Analisis berbasis aturan tetap dapat digunakan ketika layanan AI gagal atau belum dikonfigurasi.

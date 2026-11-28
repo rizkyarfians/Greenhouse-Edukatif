@@ -1,6 +1,5 @@
 import {loadLand} from './land-storage.js';
-import {currentSession} from './account-session.js';
-import {accountApi, storageError} from './account-storage-api.js';
+import {storageError} from './account-storage-api.js';
 import './land-scanner.css';
 import './workspace-theme.css';
 import './recommendation.css';
@@ -40,62 +39,9 @@ function render(){
 }
 function choose(r){if(r.verdict==='blocked')return;selected=r;$('plan').hidden=false;$('selection').textContent=r.crop.name+' · '+labels[r.verdict];$('capacity').textContent='Area efektif '+fmt(r.effectiveArea)+' m² · estimasi '+fmt(r.population,0)+' '+r.crop.unit+'. Tidak memperhitungkan polygon aktual, varietas, bedengan atau akses. '+(r.verdict==='candidate'?'Tetap perlu validasi lapangan.':'Hanya untuk simulasi, bukan rekomendasi tanam.');$('plan-status').textContent='';$('plan').scrollIntoView({block:'nearest'});}
 function values(){return {indoorTemperature:greenhouse&&$('indoor-temp').value!==''?$('indoor-temp').valueAsNumber:null,water:$('water').value,soil:$('soil').value,drain:$('drain').value,ph:$('ph').value===''?null:$('ph').valueAsNumber,usable:$('usable').valueAsNumber,areaM2:land.areaM2};}
-function analyze(){clearAi();input=values();selected=null;$('plan').hidden=true;results=rank(cropChoices(allCrops,land.type),input,climateForType(climate,land.type,input.indoorTemperature));render();$('status').textContent=results.length+' komoditas dianalisis. Skor bersifat screening awal; periksa faktor pembatas dan kelengkapan data.';}
+function analyze(){input=values();selected=null;$('plan').hidden=true;results=rank(cropChoices(allCrops,land.type),input,climateForType(climate,land.type,input.indoorTemperature));render();$('status').textContent=results.length+' komoditas dianalisis. Skor bersifat screening awal; periksa faktor pembatas dan kelengkapan data.';}
 $('assessment').addEventListener('submit',e=>{e.preventDefault();if(land)analyze();});
-$('assessment').addEventListener('input',()=>{clearAi();input=null;selected=null;results=[];$('plan').hidden=true;$('results').hidden=true;});
-function clearAi() {
- $('ai-status').textContent='';
- $('ai-answer').replaceChildren();
- $('ai-answer').hidden=true;
-}
-
-function aiMessage(error) {
- const messages={
-  'ai-unconfigured':'API AI belum dikonfigurasi di server.',
-  'no-candidates':'Belum ada kandidat untuk dijelaskan. Periksa faktor pembatas di hasil screening.',
-  'ai-rate-limited':'Batas permintaan AI tercapai. Tunggu sebentar dan coba lagi.',
-  'ai-provider-rate-limited':'OpenAI sedang membatasi permintaan. Cek limit atau saldo API lalu coba lagi.',
-  'ai-timeout':'OpenAI terlalu lama merespons. Coba lagi.',
- };
- if(error?.status===401)return 'Masuk via Google dari beranda untuk menggunakan AI.';
- if(error?.status===404 || error?.status===405)return 'Buka Automotion dari server Fastify untuk menggunakan AI.';
- return messages[error?.code] ?? 'Penjelasan AI gagal dimuat. Hasil screening tetap tersedia.';
-}
-
-$('run-ai').addEventListener('click', async () => {
- const assessedInput=input;
- if(!assessedInput || $('run-ai').disabled)return;
- clearAi();
- $('run-ai').disabled=true;
- $('ai-status').textContent='Menyiapkan penjelasan AI…';
- try {
-  const account=await currentSession();
-  if(assessedInput!==input)return;
-  if(!account || account.mode==='guest'){
-   $('ai-status').textContent='Masuk via Google dari beranda untuk menggunakan AI.';
-   return;
-  }
-  const request=accountApi(account, '/api/ai/', 24_000);
-  const result=await request('crops',{method:'POST',body:{landType:land.type,input:assessedInput,
-   climate:{temperature:climate.temperature,rain:climate.rain,seasonRain:climate.seasonRain,forecastMax:climate.forecastMax}}});
-  if(assessedInput!==input)return;
-  const answer=$('ai-answer');
-  answer.append(node('p',result.summary));
-  const notes=result.crops.map(crop=>{
-   const name=allCrops.find(entry=>entry.id===crop.id)?.name;
-   return name ? name+' · '+crop.note : null;
-  }).filter(Boolean);
-  if(notes.length)answer.append(list('Catatan kandidat',notes));
-  if(result.nextSteps.length)answer.append(list('Cek di lahan',result.nextSteps));
-  answer.hidden=false;
-  $('ai-status').textContent='Penjelasan selesai.';
- } catch(error) {
-  if(assessedInput===input)$('ai-status').textContent=aiMessage(error);
- } finally {
-  $('run-ai').disabled=false;
- }
-});
-
+$('assessment').addEventListener('input',()=>{selected=null;results=[];$('plan').hidden=true;$('results').hidden=true;});
 function plan(){return selected?{version:1,landType:land.type,modelVersion,landFingerprint:land.fingerprint,land:{name:land.name,points:land.points,areaM2:land.areaM2,center:land.center},climateFetchedAt:profile?.fetchedAt||null,climate:climateForType(climate,land.type,input.indoorTemperature),outdoorClimate:climate,input,selected:selected.crop,assessment:{verdict:selected.verdict,score:selected.score,coverage:selected.coverage,blocks:selected.blocks,risks:selected.risks,missing:selected.missing},effectiveAreaM2:selected.effectiveArea,population:selected.population,createdAt:new Date().toISOString()}:null;}
 $('save-plan').addEventListener('click',()=>{const p=plan();if(!p)return;try{localStorage.setItem(key,JSON.stringify(p));$('plan-status').textContent='Rencana disimpan di perangkat ini.';}catch{$('plan-status').textContent='Penyimpanan gagal. Gunakan ekspor JSON.';}});
 $('export-plan').addEventListener('click',()=>{const p=plan();if(!p)return;const url=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='automotion-farm-plan.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
