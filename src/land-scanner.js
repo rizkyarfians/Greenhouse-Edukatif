@@ -2,6 +2,7 @@ import './land-scanner.css';
 import './workspace-theme.css';
 import './workflow-theme.css';
 import './scan-beds.css';
+import './theme.js';
 import {setupBedPreview} from './scan-bed-preview.js';
 import {browserLand, landStore} from './land-storage.js';
 import {storageError} from './account-storage-api.js';
@@ -77,17 +78,17 @@ function render(){
     }li.append(desc,actions);list.append(li);
   });
   const svg=$('diagram');svg.replaceChildren();
-  for(let x=20;x<360;x+=20)svg.append(el('line',{x1:x,y1:0,x2:x,y2:260,stroke:'#dce6d9','stroke-width':1}));
-  for(let y=20;y<260;y+=20)svg.append(el('line',{x1:0,y1:y,x2:360,y2:y,stroke:'#dce6d9','stroke-width':1}));
-  svg.append(el('text',{x:334,y:19,'text-anchor':'middle',fill:'#526b57','font-size':11},'↑ N'));
-  if(!points.length){svg.append(el('text',{x:180,y:130,'text-anchor':'middle',fill:'#526b57','font-size':14},'Belum ada patok'));return;}
+  for(let x=20;x<360;x+=20)svg.append(el('line',{x1:x,y1:0,x2:x,y2:260,stroke:'var(--diagram-grid, #dce6d9)','stroke-width':1}));
+  for(let y=20;y<260;y+=20)svg.append(el('line',{x1:0,y1:y,x2:360,y2:y,stroke:'var(--diagram-grid, #dce6d9)','stroke-width':1}));
+  svg.append(el('text',{x:334,y:19,'text-anchor':'middle',fill:'var(--diagram-text, #526b57)','font-size':11},'↑ N'));
+  if(!points.length){svg.append(el('text',{x:180,y:130,'text-anchor':'middle',fill:'var(--diagram-text, #526b57)','font-size':14},'Belum ada patok'));return;}
   const lat0=points[0].lat,lon0=points[0].lon,cos=Math.cos(lat0*Math.PI/180);
   const xy=points.map(p=>[(((p.lon-lon0+540)%360)-180)*cos,p.lat-lat0]);
   const minX=Math.min(...xy.map(p=>p[0])),maxX=Math.max(...xy.map(p=>p[0])),minY=Math.min(...xy.map(p=>p[1])),maxY=Math.max(...xy.map(p=>p[1]));
   const scale=Math.min(280/Math.max(maxX-minX,1e-8),180/Math.max(maxY-minY,1e-8));
   const screen=xy.map(p=>[180+(p[0]-(minX+maxX)/2)*scale,130-(p[1]-(minY+maxY)/2)*scale]);
-  if(screen.length>=2)svg.append(el(screen.length>=3?'polygon':'polyline',{points:screen.map(p=>p.join(',')).join(' '),fill:r.valid?'#7fbd9144':'none',stroke:r.valid?'#246348':'#b46c3b','stroke-width':2.5,'stroke-dasharray':r.valid?'none':'5 4'}));
-  screen.forEach(([x,y],i)=>{svg.append(el('circle',{cx:x,cy:y,r:8,fill:'#246348',stroke:'white','stroke-width':2}));svg.append(el('text',{x,y:y+3.5,'text-anchor':'middle',fill:'white','font-size':9},i+1));});
+  if(screen.length>=2)svg.append(el(screen.length>=3?'polygon':'polyline',{points:screen.map(p=>p.join(',')).join(' '),fill:r.valid?'var(--diagram-fill, #7fbd9144)':'none',stroke:r.valid?'var(--diagram-boundary, #246348)':'var(--diagram-warning, #b46c3b)','stroke-width':2.5,'stroke-dasharray':r.valid?'none':'5 4'}));
+  screen.forEach(([x,y],i)=>{svg.append(el('circle',{cx:x,cy:y,r:8,fill:'var(--diagram-marker, #246348)',stroke:'white','stroke-width':2}));svg.append(el('text',{x,y:y+3.5,'text-anchor':'middle',fill:'white','font-size':9},i+1));});
 }
 function resetEdit(){edit=-1;$('manual-form').reset();$('manual-submit').textContent='Tambah koordinat';$('cancel-edit').hidden=true;}
 function stopCamera() {

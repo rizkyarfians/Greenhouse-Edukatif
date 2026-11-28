@@ -1,5 +1,6 @@
 import './workspace-theme.css';
 import './login.css';
+import './theme.js';
 import sprout from 'lucide-static/icons/sprout.svg?raw';
 
 document.getElementById('login-brand-icon').innerHTML = sprout;

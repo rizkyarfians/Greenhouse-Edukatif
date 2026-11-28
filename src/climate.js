@@ -4,6 +4,7 @@ import './land-scanner.css';
 import './workspace-theme.css';
 import './climate.css';
 import './workflow-theme.css';
+import './theme.js';
 import {measure} from './land-geometry.js';
 import {landType} from './land-type.js';
 import {shiftDate,summarizeDaily,seasonalBaseline} from './climate-core.js';

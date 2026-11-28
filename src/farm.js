@@ -6,6 +6,7 @@ import './land-scanner.css';
 import './workspace-theme.css';
 import './farm.css';
 import './workflow-theme.css';
+import './theme.js';
 import {measure} from './land-geometry.js';
 import {allCrops} from './crop-database.js';
 import {landType,cropChoices,sameLandType} from './land-type.js';
@@ -53,7 +54,7 @@ function chooseZone(z){selectedZone=z;for(const b of document.querySelectorAll('
 function stopWater(completed=false){clearTimeout(waterTimer);const z=active;active=null;if(completed&&z)wet[z]=Math.min(100,wet[z]+5);viewer?.setWater(null);$('water-status').textContent=completed?'Simulasi selesai. Kelembapan contoh diperbarui.':'Pompa simulasi mati.';$('irrigate').disabled=!layout?.capacity;$('stop-water').disabled=true;$('irrigation-zone').disabled=false;if(selectedDevice)selectDevice(selectedDevice);}
 function startWater(){const z=$('irrigation-zone').value;if(active||!layout?.allocated[z])return;active=z;chooseZone(z);viewer?.setWater(z);$('irrigate').disabled=true;$('stop-water').disabled=false;$('irrigation-zone').disabled=true;$('water-status').textContent='Aliran air simulasi aktif — Zone '+z;if(selectedDevice)selectDevice(selectedDevice);waterTimer=setTimeout(()=>stopWater(true),7500);}
 function initViewer(container,l){
- const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearColor(0xe8f0e2,1);renderer.outputColorSpace=THREE.SRGBColorSpace;container.append(renderer.domElement);
+ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setClearAlpha(0);renderer.outputColorSpace=THREE.SRGBColorSpace;container.append(renderer.domElement);
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(43,1,.05,2000),controls=new OrbitControls(camera,renderer.domElement);
  const scale=30/Math.max(l.width,l.depth),world=(x,y,h=0)=>new THREE.Vector3(x*scale,h,-y*scale);
  controls.enableDamping=false;controls.maxPolarAngle=Math.PI*.48;controls.minDistance=5;controls.maxDistance=140;controls.target.set(0,0,0);
